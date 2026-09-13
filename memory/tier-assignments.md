@@ -12,17 +12,18 @@ Running record of proposed and approved tier/model assignments across the fleet.
 
 **Tier:** Free-pool — this agent's own stated policy ("be the boring one").
 **Why:** Bookkeeping and routing logic; should be one of the cheapest agents to run.
-**Status:** Proposed, not yet applied — still deployed on default auth (same as `aegis-ceo`'s tier) as of 2026-09-13. Moving it to OmniRoute free-pool is blocked on OmniRoute's free tier being confirmed live end-to-end (see `/audit-omniroute`).
+**Auth mode:** OmniRoute API-key routing (`ANTHROPIC_BASE_URL` → OmniRoute → Gemini), not subscription auth (mutually exclusive per agent in Trinity).
+**Status:** Live on OmniRoute free-pool (verified 2026-09-13: chat traffic `Provider: gemini`, Trinity subscription cleared, `use_platform_api_key=false`).
 
 ## aegis-threat-intel
 
-**Tier:** Free-pool — via OmniRoute, provider `gemini/gemini-3.7-flash`.
+**Tier:** Free-pool — via OmniRoute, provider `gemini/gemini-3.7-flash` (runtime currently mapped via OmniRoute combos to `gemini/gemini-flash-lite-latest`).
 **Why:** High-volume, low-stakes CVE/security-news polling and classification. Doesn't need Hamid's scarce Claude Pro subscription or paid mid-cost API budget — exactly the free-pool use case.
 **Auth mode:** OmniRoute API-key routing, not subscription auth (mutually exclusive per agent in Trinity).
-**Dependency:** Requires OmniRoute free-pool routing confirmed live before this assignment can actually take effect — not yet verified as of 2026-09-13.
 **Token-saving habits assigned:** filter feeds upstream before pulling full text into context; rely on OmniRoute's built-in compression; batch related CVE checks into one consolidated pass; reuse prior findings/baselines from its own memory instead of re-deriving history each time.
-**Status:** Proposed and recorded (2026-09-13). Not yet applied — deployed agent is still on whatever auth mode this Trinity instance defaults new agents to, per `aegis-threat-intel`'s own onboarding checklist (`auth_mode_confirmed` step, currently unchecked). Requires an explicit `aegis-infra`/admin action to actually switch the agent's Trinity auth mode to OmniRoute-routed.
+**Status:** Approved by CEO / Hamid (2026-09-13). Applied and live on OmniRoute free-pool (verified 2026-09-13: chat traffic `Provider: gemini`, platform API key disabled, OmniRoute `.env` + `.credentials.enc` in place).
 
 ## Change log
 
 - 2026-09-13: File created. Backfilled `aegis-ceo` (live, premium) and `aegis-infra` (proposed, free-pool, not yet applied) for context. Recorded `aegis-threat-intel`'s tier (proposed, free-pool via OmniRoute/gemini-3.7-flash, not yet applied — dependency on OmniRoute + an explicit auth-mode switch, neither confirmed done).
+- 2026-09-13: Folded container "TI Approved" update into this file. Marked `aegis-threat-intel` approved by CEO/Hamid and live on OmniRoute free-pool after explicit auth flip. Marked `aegis-infra` live on the same free-pool path (subscription cleared; OmniRoute `.env` durable via `.credentials.enc`).

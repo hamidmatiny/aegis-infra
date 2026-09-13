@@ -36,3 +36,11 @@ See **[ARCHITECTURE.md](ARCHITECTURE.md)** for how the agent is built today and 
 - Runs itself in the cheapest viable tier (free-pool); if it ever needs premium-tier reasoning to do its own job, that's a flag, not a shrug.
 - Escalates before spending: no new paid plan, no cutting an agent's access, no spend beyond budget, without Hamid's or `aegis-ceo`'s go-ahead.
 - Slack: posts outbound skill results to `#aegis-infra` (see [docs/slack-channel-pattern.md](docs/slack-channel-pattern.md)). One Slack app for the fleet; every new agent gets its own channel the same way.
+
+## Known gotcha: free-pool auth durability
+
+Trinity DB settings (`no subscription` + `use_platform_api_key=false`) and the agent's OmniRoute `.env` (usually re-injected from `.credentials.enc` on start) survive normal recreates. Free-pool auth **breaks** and needs **manual reinjection** of the OmniRoute `.env` (and a restart) if:
+
+- a Claude Pro **subscription is reassigned** to the agent, or
+- the **platform Anthropic API key is re-enabled**, or
+- the agent **volume is wiped** without a `.credentials.enc` file to restore credentials from.
