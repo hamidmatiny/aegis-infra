@@ -1,0 +1,20 @@
+{
+  "phase": "local",
+  "started": "2026-09-13",
+  "steps": {
+    "local": {
+      "env_configured": { "done": false, "label": "Configure environment variables (.env) — OMNIROUTE_API_URL, and OMNIROUTE_API_KEY if the instance requires auth" },
+      "first_skill_run": { "done": false, "label": "Run /audit-omniroute to establish real ground truth on OmniRoute's current state" },
+      "first_proposal": { "done": false, "label": "Run /propose-agent-tier for the next agent to be hired, and get it approved by Hamid or aegis-ceo" },
+      "plugins_installed": { "done": false, "label": "Install plugins (agent-dev, trinity, utilities)" }
+    },
+    "trinity": {
+      "onboarded": { "done": false, "label": "Deploy to Trinity (/trinity:onboard) — as a free-pool agent, per its own tier policy" },
+      "first_remote_run": { "done": false, "label": "Run a skill remotely via mcp__trinity__chat_with_agent" }
+    },
+    "schedules": {
+      "schedules_configured": { "done": false, "label": "Confirm the recommended schedules in template.yaml (usage rollup, pricing re-check, dashboard, doc reconciliation)" },
+      "first_scheduled_run": { "done": false, "label": "Verify first scheduled execution completed" }
+    }
+  }
+}

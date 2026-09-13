@@ -1,0 +1,39 @@
+# Credentials - never commit
+.mcp.json
+.env
+*.pem
+*.key
+
+# Claude Code internals
+.claude.json
+.claude/projects/
+.claude/statsig/
+.claude/todos/
+.claude/debug/
+.claude/sessions/
+.claude/shell-snapshots/
+.claude/plugins/
+.claude/backups/
+.claude/settings.local.json
+# Container-only config: the Trinity base image bakes ~/.claude/settings.json with
+# hook paths that exist only inside the container, and HOME is the repo root. A
+# committed copy bricks any clone made outside it (the missing hook exits 2, which
+# Claude Code reads as "block this tool call"). Trinity enforces this fleet-wide and
+# untracks an already-committed copy on the next Push (trinity#2036).
+.claude/settings.json
+# Trinity runtime state — star form so authored hooks stay tracked
+.trinity/*
+!.trinity/pre-check
+!.trinity/post-check
+!.trinity/setup.sh
+credentials.json
+*.pem
+*.key
+
+# Runtime
+content/
+session-files/
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store

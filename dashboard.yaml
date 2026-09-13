@@ -1,0 +1,67 @@
+title: "AEGIS Infra"
+refresh: 300
+updated: "2026-09-13T00:00:00Z"
+
+sections:
+  - title: "Status"
+    layout: grid
+    columns: 3
+    widgets:
+      - type: status
+        label: "Agent Status"
+        value: "Active"
+        color: green
+      - type: status
+        label: "OmniRoute"
+        value: "Unaudited"
+        color: gray
+        description: "Set by /audit-omniroute — updated to green/yellow/red once checked"
+      - type: metric
+        label: "Own Tier"
+        value: "free-pool"
+        description: "Per this agent's own policy — flag if this ever drifts to premium"
+
+  - title: "Fleet Cost"
+    layout: grid
+    columns: 3
+    widgets:
+      - type: metric
+        label: "Agents Tracked"
+        value: "1"
+        description: "aegis-ceo — updated by /update-dashboard"
+      - type: metric
+        label: "Anomalies This Week"
+        value: "—"
+        description: "Updated by /track-usage"
+      - type: metric
+        label: "Pricing Checks Overdue"
+        value: "—"
+        description: "Updated by /review-pricing"
+
+  - title: "Tier Distribution"
+    layout: list
+    widgets:
+      - type: table
+        title: "Agents by Tier"
+        columns: ["Agent", "Tier", "Provider/Model"]
+        rows: []
+
+  - title: "Recent Activity"
+    layout: list
+    widgets:
+      - type: list
+        title: "Recent Rollups & Reviews"
+        items: []
+        max_items: 5
+
+  - title: "Quick Links"
+    layout: list
+    widgets:
+      - type: link
+        label: "OmniRoute (repo)"
+        url: "https://github.com/diegosouzapw/OmniRoute"
+        external: true
+      - type: link
+        label: "Trinity Dashboard"
+        url: "https://ability.ai"
+        external: true
