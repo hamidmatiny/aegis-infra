@@ -32,4 +32,4 @@ Consult-first spine for `aegis-infra`. Topic logs under `memory/*.md` remain the
 
 ## Last session summary
 
-**2026-09-13** — Proposed SU-2026-09-13-3 (P0: check-revenue skip≠publish; VP synthesize abort on pull fail) — awaiting approve. Logged DN-2026-09-13-1/2 (escalate/TI delivery design options — Hamid chooses). Added permanent fail-closed Step 2b to `/propose-skill-upgrade`. Prior: live verify PASS cycle ($29.00 CAD); A2A analyst→infra granted.
+**2026-09-13** — Applied SU-2026-09-13-3 (a)(b); DN-1A; DN-2B+mandatory queue. A2A: analyst→ceo, TI→ceo. E2E: analyst anomaly → ceo exec `CuCc-tX8Kvft008v1bJqzA`; TI finding → ceo exec `MfNaGAz4AtJWOiheDUmDwA` (both `source_agent` set, delivery confirmed). VP synthesize pull-gate live on container (Cornelius read-only upstream — volume-local).
