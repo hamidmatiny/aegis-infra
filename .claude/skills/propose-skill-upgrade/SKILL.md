@@ -4,7 +4,7 @@ description: Review live agents' skills/missions and propose (never apply) skill
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion, mcp__trinity__list_agents, mcp__trinity__get_agent, mcp__trinity__report
 user-invocable: true
 metadata:
-  version: "1.0"
+  version: "1.1"
   created: 2026-09-13
   author: aegis-infra
 ---
@@ -46,6 +46,28 @@ For each agent, ask:
 - Did a real failure this period expose a missing skill step, a missing "known failure modes" section, or a missing verification check?
 - Would structured memory (`memory/MEMORY.md` standard — see proposal template below) reduce re-derivation?
 - Is the current tier/model still appropriate? If the main ask is tier/auth, **invoke `/propose-agent-tier`** instead of burying it here — cross-link both memory files.
+
+### Step 2b: Fail-closed gate check (mandatory every review)
+
+**Standing rule:** no explicit positive result → do not claim success.
+
+For every skill under review that publishes, escalates, applies config, synthesizes "current" state, or otherwise acts after a dependency, verify the skill text enforces fail-closed behavior:
+
+| Positive token (examples) | Meaning |
+|---------------------------|---------|
+| `PASS` / `PASS:` | Independent verify succeeded |
+| `approved` / `approve` | Human/CEO gate succeeded |
+| `pull-ok` / exit 0 + required SHAs | Fresh source refresh succeeded |
+| `delivered` / confirmed send ack | Outbound notify actually reached the target |
+
+**Fail the review (propose a fix) if the skill:**
+
+- Treats skip, timeout, permission deny, missing tool, or soft fallback as enough to publish / escalate-as-delivered / present data as fresh
+- Uses wording like "PASS or skip" where skip can be read as publish-worthy
+- Continues after a failed dependency without aborting or explicitly labeling the output as incomplete/stale/undelivered
+- Claims "escalated to X" without a confirmed delivery path (tool + live A2A permission, or an honest fallback phrase)
+
+This check applies to **every** future `/propose-skill-upgrade` run — new skills included — not only after another accidental discovery. Cite the skill path and the exact fail-open line when proposing a fix.
 
 ### Step 3: Draft proposals (cite everything)
 
@@ -109,6 +131,12 @@ When a real failure is diagnosed (auth default, OmniRoute durability, data-contr
 **What went wrong:** Asking the same model, in the same context that produced a report, to "check if this looks right" inherits the reasoning trail and systematically under-detects errors.
 
 **Correct behavior:** Verification proposals must specify a **separate** free-pool call whose prompt contains only the claim artifact + source excerpts — no chain-of-thought from the producer.
+
+### FM-4 — Skipping the fail-closed gate check
+
+**What went wrong:** Fail-open publish/escalate wording was found only after a live incident (`/check-revenue` published after A2A deny). Reviews that only look for "new capabilities" miss soft skips that claim success.
+
+**Correct behavior:** Always run Step 2b. Propose a fix for any gated act that lacks an explicit positive token. Do not treat "the skill usually works" as a pass.
 
 ## Outputs
 

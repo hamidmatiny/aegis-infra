@@ -35,7 +35,41 @@ Running record of proposed / approved / declined skill, verification, and memory
 
 ---
 
+## Proposal SU-2026-09-13-3 — P0 fail-closed wording (check-revenue + VP synthesize)
+
+**Status:** approved (2026-09-13) by Hamid — **applied** (2026-09-13)  
+**Agents:** `aegis-analyst`, `the-brain`  
+**Type:** narrow logic / wording fix — **no new capability**
+
+### (a) `aegis-analyst` `/check-revenue` — applied
+
+Publish only after explicit `PASS:`. Skip/deny/timeout are never publish-worthy. Step 6/7 wording updated; residual "or explicit skip" removed.
+
+### (b) `the-brain` `/synthesize` — applied
+
+Pull gate: exit 0 + four SHAs required; else abort with `status: pull-failed`. Skill written into live `agent-the-brain` container (upstream is read-only Cornelius — **volume-local until own-repo bind**; survives normal restarts, at risk on recreate from template).
+
+---
+
+## DN-2026-09-13-1 — `aegis-analyst` `/escalate-anomaly` delivery
+
+**Decision:** Option A (2026-09-13) — **applied**  
+- Granted `aegis-analyst` → `aegis-ceo` A2A permission  
+- Skill uses `mcp__trinity__chat_with_agent`; claim escalated only after confirmed delivery; on failure: "flagged, delivery failed"
+
+## DN-2026-09-13-2 — `aegis-threat-intel` `/scan-threats` delivery
+
+**Decision:** Option B + mandatory queue on chat failure (2026-09-13) — **applied**  
+- Granted `aegis-threat-intel` → `aegis-ceo` A2A permission  
+- Claim CEO notified only after confirmed delivery  
+- Operator-queue alert **mandatory** when ceo-chat fails (not only "if urgent")  
+- `CLAUDE.md` escalation channels + `/scan-threats` Step 7 updated
+
+---
+
 ## Change log
 
 - 2026-09-13: File created. Logged SU-2026-09-13-1 and SU-2026-09-13-2 as proposed.
 - 2026-09-13: Both approved by Hamid; both applied (analyst verify step + infra `/verify-revenue-claim`; `memory/MEMORY.md` retrofit).
+- 2026-09-13: Proposed SU-2026-09-13-3; logged DN-2026-09-13-1/2; standing fail-closed check in `/propose-skill-upgrade` Step 2b.
+- 2026-09-13: SU-2026-09-13-3 approved+applied; DN-1 Option A and DN-2 Option B+mandatory queue approved+applied; A2A edges analyst→ceo and TI→ceo granted.

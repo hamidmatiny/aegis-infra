@@ -19,6 +19,7 @@ Consult-first spine for `aegis-infra`. Topic logs under `memory/*.md` remain the
 - Mid-cost Trinity model alias (e.g. `the-brain` `sonnet`) does not survive restart until durable `AGENT_RUNTIME_MODEL`. See `/audit-omniroute` FM-2.
 - Independent verification must be a separate free-pool call with claim + sources only — never self-grade in the producer context. (`/verify-revenue-claim`, `/propose-skill-upgrade` FM-3)
 - Number-reporting agents: spot-check live API shape before trusting CLAUDE.md. (`/propose-skill-upgrade` FM-2)
+- **Fail-closed gate:** no explicit positive result (`PASS` / `approved` / `pull-ok` / `delivered`) → do not claim success. Every `/propose-skill-upgrade` run must check this (Step 2b / FM-4).
 
 ## Open / unresolved
 
@@ -31,4 +32,4 @@ Consult-first spine for `aegis-infra`. Topic logs under `memory/*.md` remain the
 
 ## Last session summary
 
-**2026-09-13** — Deployed SU wiring to Trinity (infra `6943e84`, analyst `6094a18`). First live `/check-revenue` hit A2A permission deny (published incorrectly; FM-3 added). Granted `aegis-analyst`→`aegis-infra` permission. Second run: draft → infra `/verify-revenue-claim` → `PASS: claim matches cited sources (MRR $29.00 CAD, subscribers/signups 1)` → report `a15bfb19-736a-46c3-9f74-b063922025f8`.
+**2026-09-13** — Proposed SU-2026-09-13-3 (P0: check-revenue skip≠publish; VP synthesize abort on pull fail) — awaiting approve. Logged DN-2026-09-13-1/2 (escalate/TI delivery design options — Hamid chooses). Added permanent fail-closed Step 2b to `/propose-skill-upgrade`. Prior: live verify PASS cycle ($29.00 CAD); A2A analyst→infra granted.
