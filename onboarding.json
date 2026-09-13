@@ -3,18 +3,18 @@
   "started": "2026-09-13",
   "steps": {
     "local": {
-      "env_configured": { "done": false, "label": "Configure environment variables (.env) — OMNIROUTE_API_URL, and OMNIROUTE_API_KEY if the instance requires auth" },
-      "first_skill_run": { "done": false, "label": "Run /audit-omniroute to establish real ground truth on OmniRoute's current state" },
-      "first_proposal": { "done": false, "label": "Run /propose-agent-tier for the next agent to be hired, and get it approved by Hamid or aegis-ceo" },
-      "plugins_installed": { "done": false, "label": "Install plugins (agent-dev, trinity, utilities)" }
+      "env_configured": { "done": true, "label": "Configure environment variables (.env) — OMNIROUTE_API_URL, and OMNIROUTE_API_KEY if the instance requires auth", "done_note": "2026-09-13: .env present with OMNIROUTE_API_URL set" },
+      "first_skill_run": { "done": false, "label": "Run /audit-omniroute to establish real ground truth on OmniRoute's current state", "note": "OmniRoute has been audited in ops; onboarding flag never flipped — ceremonial unless you want a fresh formal /audit-omniroute logged here" },
+      "first_proposal": { "done": true, "label": "Run /propose-agent-tier for the next agent to be hired, and get it approved by Hamid or aegis-ceo", "done_note": "2026-09-13: aegis-threat-intel (and others) recorded approved in memory/tier-assignments.md" },
+      "plugins_installed": { "done": false, "label": "Install plugins (agent-dev, trinity, utilities)", "note": "Low urgency: agent already deployed on Trinity with plugins declared in template.yaml; this step is for the local Claude Code CLI session" }
     },
     "trinity": {
       "onboarded": { "done": true, "label": "Deploy to Trinity (/trinity:onboard) — as a free-pool agent, per its own tier policy" },
-      "first_remote_run": { "done": false, "label": "Run a skill remotely via mcp__trinity__chat_with_agent" }
+      "first_remote_run": { "done": false, "label": "Run a skill remotely via mcp__trinity__chat_with_agent", "note": "Nice-to-have smoke test; fleet already chats with this agent in practice — mark when you want a formal logged remote skill run" }
     },
     "schedules": {
       "schedules_configured": { "done": true, "label": "Confirm the recommended schedules in template.yaml (usage rollup, pricing re-check, dashboard, doc reconciliation)" },
-      "first_scheduled_run": { "done": false, "label": "Verify first scheduled execution completed" }
+      "first_scheduled_run": { "done": false, "label": "Verify first scheduled execution completed", "note": "Not urgent: schedules ship enabled:false by design until you turn one on" }
     }
   }
 }

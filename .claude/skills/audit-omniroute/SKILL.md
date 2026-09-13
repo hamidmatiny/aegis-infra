@@ -85,6 +85,26 @@ Outbound only — Slack is not an approval surface for reconfiguring OmniRoute.
 
 If OmniRoute needs configuration changes to close a gap, **propose** the change and ask before applying it — this skill is read-only by design. Installing, reconfiguring, or restarting OmniRoute is a change to shared fleet infrastructure and needs Hamid's or the CEO's go-ahead per this agent's operating rules.
 
+## Known failure modes
+
+### FM-1 — OmniRoute `.env` durability vs restart
+
+**What went wrong:** Free-pool agents looked healthy until a subscription was reassigned, platform Anthropic API key was re-enabled, or the agent volume was wiped without `.credentials.enc`. Trinity DB flags (`no subscription` + `use_platform_api_key=false`) alone are not enough — without re-injected OmniRoute `.env` (usually restored from `.credentials.enc` on start), chat falls back to broken/wrong auth.
+
+**Correct behavior:** Every audit of a free-pool or mid-cost OmniRoute agent must check: OmniRoute reachable, agent `.env` / credentials present, and preferably a recent OmniRoute log line showing the expected provider. Flag missing `.credentials.enc` as a durability gap. README "Known gotcha: free-pool auth durability" is the human checklist.
+
+### FM-2 — Mid-cost Trinity model alias does not survive restart
+
+**What went wrong:** `the-brain` (VP) mid-cost requires Trinity chat model alias `sonnet` (mapped in OmniRoute to a mid-cost Gemini combo). `PUT /api/agents/<name>/model` is **in-memory** on the agent-server — after restart the agent silently falls back to the default Claude ID, which OmniRoute free-pool remaps to flash-lite.
+
+**Correct behavior:** When auditing mid-cost agents, verify the live chat `model` / `model_name` matches the intended alias after any restart. Until durable `AGENT_RUNTIME_MODEL` exists, call out re-apply via `PUT /api/agents/<name>/model` as required ops, not optional polish.
+
+### FM-3 — Reporting "configured" from intent or a directory alone
+
+**What went wrong:** Treating "OmniRoute is the intended mechanism" or a cloned repo path as proof it is live.
+
+**Correct behavior:** Reachability + configured providers/pools from a real probe, or explicitly "unknown / not reachable." Never invent admin API shape from a template.
+
 ## Outputs
 
 - A ground-truth audit report (chat and, on Trinity, a published report)

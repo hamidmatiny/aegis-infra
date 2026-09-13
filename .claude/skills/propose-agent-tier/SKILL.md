@@ -71,13 +71,31 @@ Format:
 **Dependencies:** [e.g. "requires OmniRoute's X pool confirmed live — see latest /audit-omniroute"]
 ```
 
-Ask explicitly whether to proceed. This skill stops here — actually wiring the agent's auth/credentials on Trinity is a separate action that needs Hamid's or the CEO's go-ahead, per this agent's operating rules (no live config changes without approval).
+Ask explicitly whether to proceed. End every proposal with: reply **approved** / **approve** to accept, or decline with a reason. Silence is not approval. This skill stops here — actually wiring the agent's auth/credentials on Trinity is a separate action that needs Hamid's or the CEO's go-ahead, per this agent's operating rules (no live config changes without approval).
 
 ### Step 6: Record the decision
 
 Once approved (not before), append the proposal and its outcome to `memory/tier-assignments.md` (create if absent) — this is the running record `/track-usage` and `/review-pricing` check against. Record proposals that were *not* approved too, with why, so the same ground isn't re-covered from scratch later.
 
 If running on Trinity and `mcp__trinity__report` is available, publish the approved proposal as `report_type: aegis_infra.tier_proposal`, `display_hint: markdown`. Skip silently if the tool isn't available.
+
+## Known failure modes
+
+### FM-1 — Treating hire-time create as free-pool (Trinity #74)
+
+**What went wrong:** Creating a Claude Code agent via `/create-agent:custom` + `/trinity:onboard` always triggers Trinity backend `#74` auto-assign: `_apply_subscription_env` round-robins the least-used Claude subscription onto every new Claude-runtime agent. There is no create-time opt-out for OmniRoute free-pool. A tier proposal of "free-pool" does **not** take effect at hire time.
+
+**Correct behavior:** After every free-pool (or mid-cost OmniRoute) hire, record that the proposal is **approved but not yet applied** until the manual flip completes: clear subscription → `use_platform_api_key: false` → inject OmniRoute `.env` → restart → export `.credentials.enc` → verify OmniRoute traffic. Never tell Hamid the agent is "on free-pool" until that verification. Full steps live in README ("Known gotcha: new agents auto-land on Claude subscription").
+
+### FM-2 — Confusing "approved proposal" with "live durable config"
+
+**What went wrong:** Approval updates `memory/tier-assignments.md` but does not by itself persist OmniRoute credentials or mid-cost model aliases across restarts.
+
+**Correct behavior:** After apply, confirm (1) `.credentials.enc` exists for free/mid OmniRoute agents, and (2) for mid-cost agents that need a Trinity chat model alias (e.g. `sonnet`), note the restart gotcha until durable `AGENT_RUNTIME_MODEL` exists — see `/audit-omniroute` FM-2.
+
+### FM-3 — Skills compound: write failures back into this file
+
+When a real hire/flip failure is diagnosed, add another Known failure modes entry here (and a short README pointer if humans need the flip checklist). Do not leave the lesson only in chat or an external log.
 
 ## Outputs
 

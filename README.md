@@ -7,6 +7,7 @@ Every other agent in the company runs on a model, provider, and budget that AEGI
 ## Capabilities
 
 - **Model/Provider Assignment** — proposes (never silently applies) a tier + specific model for a newly hired agent, with reasoning (`/propose-agent-tier`)
+- **Skill / Capability Upgrades** — reviews live agents' skills vs mission; proposes (never applies) new skills, independent verification, or memory-structure upgrades (`/propose-skill-upgrade`)
 - **OmniRoute Configuration & Audit** — checks what's actually installed and configured right now, rather than assuming it's live (`/audit-omniroute`)
 - **Usage & Cost Tracking** — a real, numbers-based weekly rollup per agent, with anomalies flagged instead of assumed away (`/track-usage`)
 - **Pricing & Free-Tier Rebalancing** — periodic re-check of provider pricing/free-tier terms, with rebalance proposals only when something changed materially (`/review-pricing`)
@@ -26,6 +27,8 @@ See **[ARCHITECTURE.md](ARCHITECTURE.md)** for how the agent is built today and 
 |-------|---------|
 | `/audit-omniroute` | Audit OmniRoute's actual current install/config |
 | `/propose-agent-tier` | Propose a tier + model for a new or existing agent |
+| `/propose-skill-upgrade` | Propose skill / verification / memory upgrades (manual; approve before apply) |
+| `/verify-revenue-claim` | Independent PASS/FAIL for analyst revenue claims (pilot) |
 | `/track-usage` | Weekly token/cost usage rollup per agent |
 | `/review-pricing` | Re-check provider pricing/free-tier terms, propose rebalancing |
 | `/reconcile-docs` | Keep docs, skills, and architecture consistent |
@@ -33,9 +36,11 @@ See **[ARCHITECTURE.md](ARCHITECTURE.md)** for how the agent is built today and 
 ## Ground Rules
 
 - Never picks a model for itself — every assignment is proposed and approved, not applied silently.
+- Never expands an agent's capabilities unattended — skill upgrades use the same propose → **approved** / **approve** → apply gate (`memory/skill-proposals.md`).
 - Runs itself in the cheapest viable tier (free-pool); if it ever needs premium-tier reasoning to do its own job, that's a flag, not a shrug.
 - Escalates before spending: no new paid plan, no cutting an agent's access, no spend beyond budget, without Hamid's or `aegis-ceo`'s go-ahead.
 - Slack: posts outbound skill results to `#aegis-infra` (see [docs/slack-channel-pattern.md](docs/slack-channel-pattern.md)). One Slack app for the fleet; every new agent gets its own channel the same way.
+- Real failures get written into the skill that caused or exposed them (**Known failure modes** in `SKILL.md`), not only into this README.
 
 ## Known gotcha: free-pool auth durability
 
@@ -44,6 +49,10 @@ Trinity DB settings (`no subscription` + `use_platform_api_key=false`) and the a
 - a Claude Pro **subscription is reassigned** to the agent, or
 - the **platform Anthropic API key is re-enabled**, or
 - the agent **volume is wiped** without a `.credentials.enc` file to restore credentials from.
+
+## Known gotcha: the-brain (VP) mid-cost model alias does not survive restart
+
+`the-brain` (VP)'s mid-cost model alias (`sonnet` → Gemini Pro/mid-cost combo) is in-memory on the Trinity agent-server and does not survive an agent restart — must be re-applied via `PUT /api/agents/the-brain/model` with `{"model":"sonnet"}` after every restart until a durable `AGENT_RUNTIME_MODEL` mechanism exists.
 
 ## Known gotcha: new agents auto-land on Claude subscription (#74)
 
