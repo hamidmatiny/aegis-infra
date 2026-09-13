@@ -44,3 +44,17 @@ Trinity DB settings (`no subscription` + `use_platform_api_key=false`) and the a
 - a Claude Pro **subscription is reassigned** to the agent, or
 - the **platform Anthropic API key is re-enabled**, or
 - the agent **volume is wiped** without a `.credentials.enc` file to restore credentials from.
+
+## Known gotcha: new agents auto-land on Claude subscription (#74)
+
+**This is not solved in the current Trinity version.** Creating an agent via `/create-agent:custom` + `/trinity:onboard` (Claude Code runtime) always triggers Trinity backend `#74` auto-assign: on create, `_apply_subscription_env` in `trinity/src/backend/services/agent_service/crud.py` round-robins the least-used Claude subscription (`get_least_used_subscription`) onto every new Claude-runtime agent and persists it. There is **no** `AgentConfig` field, Settings toggle, or onboard skill flag to opt out or to request OmniRoute free-pool at creation time. Non-Claude runtimes (`gemini-cli`, etc.) skip auto-assign, but that is not how this fleet's agents are built.
+
+So `aegis-infra`'s tier proposal does **not** take effect at hire time. After every free-pool hire, run the same manual flip used for `aegis-infra` / `aegis-threat-intel` / `aegis-analyst`:
+
+1. `DELETE /api/subscriptions/agents/<name>` (clear the auto-assigned Pro subscription)
+2. `PUT /api/agents/<name>/api-key-setting` with `{"use_platform_api_key": false}`
+3. `POST /api/agents/<name>/credentials/inject` with the shared OmniRoute `.env` (`ANTHROPIC_BASE_URL` → OmniRoute, Gemini model aliases)
+4. Restart the agent; `POST .../credentials/export` so `.credentials.enc` exists for recreates
+5. Verify: Trinity `auth_mode: not_configured`, chat `model_name` is Gemini, OmniRoute log shows `Provider: gemini`
+
+Related: fixing a subscription token **only inside one agent's container** does not update Trinity's central "Hamid Matiny" record. New agents inherit the **central** encrypted token. After a revoke, upsert a fresh `sk-ant-oat01-…` via `POST /api/subscriptions` (`name: "Hamid Matiny"`) and restart subscription-mode agents (hot-reload is best-effort and may not apply).
