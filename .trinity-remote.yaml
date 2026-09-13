@@ -1,0 +1,14 @@
+# .trinity-remote.yaml — remote Trinity instances of this agent.
+# Shared with /trinity:sync and /trinity:loop. The instance/profile/deployed_at
+# fields are maintained by onboard; sync owns branch and any extra remotes.
+default: prod
+
+remotes:
+  prod:
+    agent: aegis-infra
+    branch: main
+    instance: http://localhost:8000
+    profile: localhost
+    deployed_at: "2026-09-13T14:50:59Z"
+    source: github:hamidmatiny/aegis-infra
+    description: Deployed via /trinity:onboard

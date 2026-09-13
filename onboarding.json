@@ -9,11 +9,11 @@
       "plugins_installed": { "done": false, "label": "Install plugins (agent-dev, trinity, utilities)" }
     },
     "trinity": {
-      "onboarded": { "done": false, "label": "Deploy to Trinity (/trinity:onboard) — as a free-pool agent, per its own tier policy" },
+      "onboarded": { "done": true, "label": "Deploy to Trinity (/trinity:onboard) — as a free-pool agent, per its own tier policy" },
       "first_remote_run": { "done": false, "label": "Run a skill remotely via mcp__trinity__chat_with_agent" }
     },
     "schedules": {
-      "schedules_configured": { "done": false, "label": "Confirm the recommended schedules in template.yaml (usage rollup, pricing re-check, dashboard, doc reconciliation)" },
+      "schedules_configured": { "done": true, "label": "Confirm the recommended schedules in template.yaml (usage rollup, pricing re-check, dashboard, doc reconciliation)" },
       "first_scheduled_run": { "done": false, "label": "Verify first scheduled execution completed" }
     }
   }
