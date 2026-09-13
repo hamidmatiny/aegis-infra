@@ -1,7 +1,7 @@
 ---
 name: audit-omniroute
 description: Check what's actually installed and configured for OmniRoute right now — don't assume it's live just because it's the intended mechanism
-allowed-tools: Read, Write, Bash, Glob, Grep, WebFetch, AskUserQuestion
+allowed-tools: Read, Write, Bash, Glob, Grep, WebFetch, AskUserQuestion, mcp__trinity__list_channel_groups, mcp__trinity__send_group_message, mcp__trinity__report
 user-invocable: true
 metadata:
   version: "1.0"
@@ -71,11 +71,22 @@ Present a plain summary:
 
 If running on Trinity and `mcp__trinity__report` is available, publish this as `report_type: aegis_infra.omniroute_audit`, `display_hint: markdown`, with the summary above as the payload. Skip silently if the tool isn't available.
 
-### Step 6: Escalate, don't fix silently
+### Step 6: Deliver to Slack `#aegis-infra` (outbound only)
+
+Push the **same real audit summary** to the bound Slack channel so Hamid sees ground truth without a terminal:
+
+1. `mcp__trinity__list_channel_groups` with `channel_type: "slack"`.
+2. `mcp__trinity__send_group_message` with that `chat_id` and the Step 5 summary — not a placeholder.
+3. If Slack fails, say so plainly; do not claim delivery.
+
+Outbound only — Slack is not an approval surface for reconfiguring OmniRoute.
+
+### Step 7: Escalate, don't fix silently
 
 If OmniRoute needs configuration changes to close a gap, **propose** the change and ask before applying it — this skill is read-only by design. Installing, reconfiguring, or restarting OmniRoute is a change to shared fleet infrastructure and needs Hamid's or the CEO's go-ahead per this agent's operating rules.
 
 ## Outputs
 
 - A ground-truth audit report (chat and, on Trinity, a published report)
+- A real Slack message in `#aegis-infra` with that same summary (when Slack is bound)
 - No configuration changes applied without explicit approval

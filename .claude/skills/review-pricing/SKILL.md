@@ -1,7 +1,7 @@
 ---
 name: review-pricing
 description: Periodically re-check provider pricing and free-tier terms against current tier assignments, and propose rebalancing when something changed materially
-allowed-tools: Read, Write, WebFetch, WebSearch, AskUserQuestion
+allowed-tools: Read, Write, WebFetch, WebSearch, AskUserQuestion, mcp__trinity__list_channel_groups, mcp__trinity__send_group_message, mcp__trinity__report
 user-invocable: true
 metadata:
   version: "1.0"
@@ -63,12 +63,23 @@ Whether or not anything changed, append the check to `memory/usage-log.md` or a 
 
 If running on Trinity and `mcp__trinity__report` is available, publish as `report_type: aegis_infra.pricing_review`, `display_hint: markdown`. Skip silently if the tool isn't available.
 
-### Step 6: Escalate approved rebalances
+### Step 6: Deliver to Slack `#aegis-infra` (outbound only)
+
+Push the **same real pricing review** (checked providers, material changes or "none", any proposed rebalances) to the bound Slack channel:
+
+1. `mcp__trinity__list_channel_groups` with `channel_type: "slack"`.
+2. `mcp__trinity__send_group_message` with that `chat_id` and the review text — not a placeholder.
+3. If Slack fails, say so plainly; do not claim delivery.
+
+Outbound visibility only — Slack must not be treated as approval to apply a rebalance. Hamid or `aegis-ceo` still approves before any live config change.
+
+### Step 7: Escalate approved rebalances
 
 A rebalance that's approved by Hamid or `aegis-ceo` gets applied the same way a fresh `/propose-agent-tier` decision would — recorded in `memory/tier-assignments.md`, with the live Trinity config change (if any) made only after that approval, never before.
 
 ## Outputs
 
 - A pricing review with real sources and dates
+- A real Slack message in `#aegis-infra` with that same review (when Slack is bound)
 - Rebalance proposals for material changes only — never a silent update
 - A record of when each provider was last checked, so drift is visible over time

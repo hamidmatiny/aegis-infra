@@ -35,3 +35,4 @@ See **[ARCHITECTURE.md](ARCHITECTURE.md)** for how the agent is built today and 
 - Never picks a model for itself — every assignment is proposed and approved, not applied silently.
 - Runs itself in the cheapest viable tier (free-pool); if it ever needs premium-tier reasoning to do its own job, that's a flag, not a shrug.
 - Escalates before spending: no new paid plan, no cutting an agent's access, no spend beyond budget, without Hamid's or `aegis-ceo`'s go-ahead.
+- Slack: posts outbound skill results to `#aegis-infra` (see [docs/slack-channel-pattern.md](docs/slack-channel-pattern.md)). One Slack app for the fleet; every new agent gets its own channel the same way.
