@@ -52,7 +52,15 @@ Trinity DB settings (`no subscription` + `use_platform_api_key=false`) and the a
 
 ## Known gotcha: the-brain (VP) mid-cost model alias does not survive restart
 
-`the-brain` (VP)'s mid-cost model alias (`sonnet` → Gemini Pro/mid-cost combo) is in-memory on the Trinity agent-server and does not survive an agent restart — must be re-applied via `PUT /api/agents/the-brain/model` with `{"model":"sonnet"}` after every restart until a durable `AGENT_RUNTIME_MODEL` mechanism exists.
+`the-brain` (VP)'s mid-cost model alias (`sonnet` → Gemini Pro/mid-cost combo) is in-memory on the Trinity agent-server and does not survive an agent restart — must be re-applied via `PUT /api/agents/the-brain/model` with `{"model":"sonnet"}` after every restart until a durable `AGENT_RUNTIME_MODEL` mechanism exists. (Env may already list `AGENT_RUNTIME_MODEL` / `CLAUDE_MODEL` for OmniRoute; the Trinity chat alias is still a separate in-memory field.)
+
+## Known gotcha: the-brain (VP) skill durability — FIXED for pull-gate (2026-09-13)
+
+**Was:** VP was deployed from read-only upstream `github:Abilityai/cornelius` (`source_mode`, push URL stubbed). The `/synthesize` pull-gate fix lived only on the container volume and would vanish on workspace wipe / recreate from template.
+
+**Now:** Bound to own writable repo via Trinity `POST /api/agents/the-brain/git/bind-to-own-repo` → [`hamidmatiny/the-brain`](https://github.com/hamidmatiny/the-brain) (private). Pull-gate skill is committed on `main` (`f904c86`). Verified after **workspace volume wipe + agent restart**: fresh clone from `origin` still contains `Pull gate` / `pull-failed` abort logic.
+
+**Still manual after volume wipe:** OmniRoute `.env` / `.credentials.enc` (re-inject + export), sibling `knowledge/` deploy keys, and the mid-cost `sonnet` chat alias (see above). Skill text itself no longer needs re-application after recreate when the agent stays bound to `hamidmatiny/the-brain`.
 
 ## Known gotcha: new agents auto-land on Claude subscription (#74)
 
