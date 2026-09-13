@@ -25,9 +25,10 @@ Consult-first spine for `aegis-infra`. Topic logs under `memory/*.md` remain the
 - Durable `AGENT_RUNTIME_MODEL` (or equivalent) for mid-cost aliases across restart — still a platform gap; manual re-apply for `the-brain`.
 - `/propose-skill-upgrade` schedule — not enabled yet (manual only).
 - Fleet-wide structured memory beyond `aegis-infra` — not approved yet.
-- Independent verification expansion beyond `aegis-analyst` — wait for a proven PASS/FAIL cycle.
+- Independent verification expansion beyond `aegis-analyst` — wait for a proven PASS/FAIL cycle. **(2026-09-13: first live PASS cycle completed — expand still needs explicit approval.)**
 - OmniRoute precise token counts for `/track-usage` — still limited; Trinity cost metadata may price as Claude even when Gemini is used (`memory/usage-log.md`).
+- Durable A2A edge `aegis-analyst` → `aegis-infra` is now permitted on this Trinity instance (required for verify loop).
 
 ## Last session summary
 
-**2026-09-13** — Hamid approved SU-2026-09-13-1 (analyst independent verify) and SU-2026-09-13-2 (structured MEMORY spine). Applied: `aegis-analyst` `/check-revenue` verify-before-publish step; new `/verify-revenue-claim` on infra; created this `memory/MEMORY.md`. Ran `/onboarding` review of remaining setup checklist (see session reply — several local flags were stale vs reality).
+**2026-09-13** — Deployed SU wiring to Trinity (infra `6943e84`, analyst `6094a18`). First live `/check-revenue` hit A2A permission deny (published incorrectly; FM-3 added). Granted `aegis-analyst`→`aegis-infra` permission. Second run: draft → infra `/verify-revenue-claim` → `PASS: claim matches cited sources (MRR $29.00 CAD, subscribers/signups 1)` → report `a15bfb19-736a-46c3-9f74-b063922025f8`.
