@@ -1,5 +1,17 @@
 name: aegis-infra
 display_name: AEGIS Infra
+version: "1.0"
+author: hamidmatiny
+use_cases:
+  - "Decide which tier and specific model a newly hired agent should run on, with reasoning"
+  - "Audit whether OmniRoute is actually installed/configured before relying on it"
+  - "Produce a real, numbers-based weekly cost/usage rollup across the fleet"
+  - "Re-check provider pricing and free-tier terms, and flag material changes"
+capabilities:
+  - model-tier-assignment
+  - omniroute-configuration
+  - cost-usage-tracking
+  - pricing-monitoring
 description: |
   Head of Infrastructure & Compute for Hamid's personal agent company (built on
   Trinity). Owns model/provider/tier assignment for every other agent, configures
@@ -68,27 +80,31 @@ credential_setup:
 # `enabled` is the recommended default and only a literal YAML true arms a schedule;
 # firing ALSO requires the agent's autonomy gate, which is OFF on every new agent.
 schedules:
-  - name: Weekly usage rollup
+  - id: weekly-usage-rollup
+    name: Weekly usage rollup
     cron: "0 8 * * 1"
     timezone: UTC
-    message: "Run the weekly token/cost usage rollup across all agents and flag anything unusual to the CEO."
+    message: "/track-usage"
     purpose: Cost/usage tracking (core mission #3)
     enabled: false
-  - name: Pricing & free-tier re-check
+  - id: pricing-recheck
+    name: Pricing & free-tier re-check
     cron: "0 9 */14 * *"
     timezone: UTC
-    message: "Re-check provider pricing and free-tier terms for every model this fleet currently uses. Propose rebalancing only if something changed materially."
+    message: "/review-pricing"
     purpose: Catch provider pricing/free-tier drift (core mission #4)
     enabled: false
-  - name: Dashboard refresh
+  - id: dashboard-refresh
+    name: Dashboard refresh
     cron: "0 */6 * * *"
     timezone: UTC
-    message: "Refresh dashboard.yaml with current tier/cost metrics."
+    message: "/update-dashboard"
     purpose: Keep the fleet cost/tier snapshot current
     enabled: false
-  - name: Doc reconciliation
+  - id: doc-reconciliation
+    name: Doc reconciliation
     cron: "0 9 * * 1"
     timezone: UTC
-    message: "Run /reconcile-docs and report any drift found. Report-only — do not apply fixes on a scheduled run."
+    message: "/reconcile-docs"
     purpose: Weekly doc/skill/architecture coherence check
     enabled: false
