@@ -43,6 +43,26 @@ See **[ARCHITECTURE.md](ARCHITECTURE.md)** for how the agent is built today and 
 - Slack: Hamid can instruct this agent in `#aegis-infra` / `#fleet-directory` with the same authority as Trinity Chat (see [docs/slack-channel-pattern.md](docs/slack-channel-pattern.md)). Propose→approve gates still apply. Posts skill results outbound to `#aegis-infra`.
 - Real failures get written into the skill that caused or exposed them (**Known failure modes** in `SKILL.md`), not only into this README.
 
+## Fleet A2A routing (hybrid protocol)
+
+Same-branch peers may message directly; cross-branch traffic goes through the branch manager (today: always `aegis-ceo`). Source of truth and exception list: **[docs/a2a-routing.md](docs/a2a-routing.md)**. Before proposing any new A2A permission, check that table and refuse direct cross-branch grants.
+
+**Approved exception (only one):** `aegis-analyst` → `aegis-infra` for `/verify-revenue-claim` only — see the routing doc. Do not copy.
+
+## Known gotcha: A2A matrix not enforced on raw REST chat (2026-09-14)
+
+**What:** Trinity’s agent-permission matrix is checked on MCP `chat_with_agent` (`checkAgentAccess`). `POST /api/agents/{name}/chat` with an agent-scoped MCP/API key does **not** apply that same matrix (proven during A2A protocol verify: analyst→core-infra succeeded over REST, denied over MCP).
+
+**Fleet callers today:** inert for Track B. Live agent workspaces (`aegis-ceo`, `aegis-infra`, `aegis-analyst`, `aegis-threat-intel`, `aegis-core-infra`, `the-brain`) and their repo skills use `mcp__trinity__chat_with_agent` for A2A — no skill/schedule script posts to `/api/agents/*/chat` for peer messaging. (Slack bind curls hit `/slack/...`, not chat. Infra `propose-skill-upgrade` mentions “or HTTP chat” as a design option only; `/verify-revenue-claim` / `/check-revenue` call MCP.)
+
+**If this becomes live:** any agent (or script) that A2A-chats via raw REST with an agent key bypasses the hybrid protocol. Close by enforcing the matrix on REST when the caller is an agent-scoped key, or by forbidding that path and requiring MCP.
+
+## Known gotcha: schedule `next_run` stuck in the past
+
+**What broke:** `aegis-ceo` `Daily trajectory review` showed Active / overdue in the UI with 0 runs. Live `GET /api/agents/scheduler/status` had the job registered, but `next_run` was stuck in the past — cron never woke. Agent redeploys did **not** delete the DB row; this is an APScheduler wake / overdue-stuck failure mode, not the OmniRoute `.env` wipe class.
+
+**Verify:** `jobs[].next_run` on `/api/agents/scheduler/status` must be **in the future**. Past + `last_run_at=null` = stuck. Fix: disable→enable the schedule (wait ~60s for sync) or restart `trinity-scheduler`. Affects every agent's cron on this instance.
+
 ## Known gotcha: free-pool auth durability
 
 Trinity DB settings (`no subscription` + `use_platform_api_key=false`) and the agent's OmniRoute `.env` (usually re-injected from `.credentials.enc` on start) survive normal recreates. Free-pool auth **breaks** and needs **manual reinjection** of the OmniRoute `.env` (and a restart) if:
@@ -53,7 +73,25 @@ Trinity DB settings (`no subscription` + `use_platform_api_key=false`) and the a
 
 ## Known gotcha: the-brain (VP) mid-cost model alias does not survive restart
 
-`the-brain` (VP)'s mid-cost model alias (`sonnet` → Gemini Pro/mid-cost combo) is in-memory on the Trinity agent-server and does not survive an agent restart — must be re-applied via `PUT /api/agents/the-brain/model` with `{"model":"sonnet"}` after every restart until a durable `AGENT_RUNTIME_MODEL` mechanism exists. (Env may already list `AGENT_RUNTIME_MODEL` / `CLAUDE_MODEL` for OmniRoute; the Trinity chat alias is still a separate in-memory field.)
+`the-brain` (VP)'s mid-cost model alias (`sonnet` → mid-cost OmniRoute combo) is in-memory on the Trinity agent-server and does not survive an agent restart — must be re-applied via `PUT /api/agents/the-brain/model` with `{"model":"sonnet"}` after every restart until a durable `AGENT_RUNTIME_MODEL` mechanism exists. (Env may already list `ANTHROPIC_MODEL` / `CLAUDE_MODEL` / `AGENT_RUNTIME_MODEL=sonnet` for OmniRoute; the Trinity chat alias is still a separate in-memory field.) Same applies to `aegis-core-infra`.
+
+## Known gotcha: mid-cost must not fall back to flash (2026-09-14)
+
+**What broke:** Mid-cost agents (`the-brain`, `aegis-core-infra`) silently billed as flash-class (`gemini-3.7-flash` / `gemini-flash-lite-latest`) when Gemini Pro quota was exhausted. Root causes stacked: (1) OmniRoute combos `sonnet` / `aegis-mid` were single-step flash (or Pro-only with free-pool Claude aliases → flash-lite); (2) agent `.env` sometimes set `ANTHROPIC_DEFAULT_SONNET_MODEL=gemini/gemini-flash-lite-latest`, so Trinity `model=sonnet` remapped straight to free-pool; (3) only a Gemini API-key provider is connected in OmniRoute — no Anthropic/OpenAI paid key for a native Claude/GPT mid fallback.
+
+**Fixed behavior (combo, not per-agent):** OmniRoute combos `sonnet` and `aegis-mid` use priority:
+
+1. `cfp/deepseek-ai/deepseek-v4-pro-0813` (Cloudflare Playground — strong mid when Pro is cooling)
+2. `cfp/openai/gpt-oss-120b`
+3. `gemini/gemini-3.1-pro-preview`
+
+No flash in the mid chain. Free-pool stays on `aegis-free` / `claude-sonnet-4-6` → flash-lite. Small/title traffic for mid agents uses combo `haiku` → flash-lite only (not the reasoning path).
+
+**Verified (2026-09-14):** Trinity chat on both agents with `model=sonnet` returned `MID_COST_PROBE_OK`; OmniRoute call logs showed `combo=sonnet` → `deepseek-ai/deepseek-v4-pro-0813` (provider `cloudflare-playground`, status 200) — not flash.
+
+**Remaining gap / variability:** There is still **no Anthropic or OpenAI API-key provider** in OmniRoute. Mid fallback is CFP DeepSeek Pro / GPT-OSS, then Gemini Pro when quota allows. When CFP is circuit-open **and** Gemini Pro is cooling, the mid combo **fail-closes** (429/502/503) instead of degrading to flash — correct vs free-pool collapse, but agents will error until a target recovers. To add a paid mid rail: connect Anthropic (`ANTHROPIC_API_KEY`) or OpenAI (`OPENAI_API_KEY`) in OmniRoute and insert e.g. `anthropic/claude-sonnet-4-5` (or GPT-class) into the `sonnet`/`aegis-mid` priority list ahead of flash forever.
+
+**Ops checklist for mid agents:** `.env` must keep `ANTHROPIC_*_MODEL=sonnet` (not a `gemini/...` flash ID); haiku/small → `haiku`; after inject, `POST .../credentials/export`; after restart, re-`PUT .../model` `sonnet` until Trinity persists the alias.
 
 ## Known gotcha: the-brain (VP) skill durability — FIXED for pull-gate (2026-09-13)
 
@@ -76,3 +114,20 @@ So `aegis-infra`'s tier proposal does **not** take effect at hire time. After ev
 5. Verify: Trinity `auth_mode: not_configured`, chat `model_name` is Gemini, OmniRoute log shows `Provider: gemini`
 
 Related: fixing a subscription token **only inside one agent's container** does not update Trinity's central "Hamid Matiny" record. New agents inherit the **central** encrypted token. After a revoke, upsert a fresh `sk-ant-oat01-…` via `POST /api/subscriptions` (`name: "Hamid Matiny"`) and restart subscription-mode agents (hot-reload is best-effort and may not apply).
+
+## Known gotcha: Claude Pro `setup-token` is additive — revoke is what kills the fleet (2026-09-14)
+
+**Hypothesis checked:** Does running `claude setup-token` in Hamid's own terminal (or another session) invalidate the fleet token because Anthropic OAuth is single-active-session?
+
+**Answer: No.** `claude setup-token` **mints another** long-lived `sk-ant-oat01-…` token (~1 year, model-requests only). It does **not** rotate or revoke prior tokens. Multiple setup-tokens can be valid at once. Trinity docs / Anthropic CLI behavior agree: mint is additive; there is no CLI revoke. Server-side revoke is via [claude.ai → Settings → Claude Code](https://claude.ai/settings/claude-code) ("Revoke" on a specific token / instance).
+
+**What actually broke `aegis-ceo` (evidence):** Anthropic returned `401 OAuth access token has been revoked` (not merely "invalid") for the token last upserted into Trinity subscription `Hamid Matiny` at `2026-09-13T20:02:18Z` (agent restarted ~30s later). Failures today: scheduled probe `11:42Z` and Slack `11:53Z`. So something **revoked that specific token server-side** — typical causes are an explicit Revoke in the Claude Code settings UI (e.g. cleaning up "old" connections after minting a new personal token), not the act of minting alone.
+
+**Standing rules so this doesn't recur:**
+
+1. Treat the Trinity-registered token as a **fleet secret**. Never click Revoke on it in claude.ai unless you are intentionally rotating.
+2. Personal `claude setup-token` / `/login` on a laptop is fine and does **not** by itself kill the fleet — but if you then revoke "extra" Claude Code entries in the UI, you may revoke the fleet one by mistake (tokens look alike).
+3. **Rotate safely:** mint new token → `POST /api/subscriptions` upsert `name: "Hamid Matiny"` with the new token → restart `aegis-ceo` → **verify chat + a real schedule trigger succeed** → only then revoke the old token in the UI (optional hygiene).
+4. Do not patch `CLAUDE_CODE_OAUTH_TOKEN` only inside the container — central subscription record is what new assigns/recreates use.
+
+**Verify health:** subscription auth probe (chat) succeeds; `POST .../schedules/<daily-trajectory-id>/trigger` succeeds (same path as 08:00 cron). UI "token present" is not enough.
