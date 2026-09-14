@@ -44,8 +44,8 @@ If `mcp__trinity__list_channel_groups` works, list Slack groups and note each ag
 ## Hard rules
 
 - Never invent or default a channel name.
-- Never treat Slack as a control plane (no tier/auth changes from a directory question).
-- Outbound/directory Q&A only.
+- Never treat a directory question as approval to change tier/auth.
+- Propose→approve gates are unchanged when Hamid instructs via Slack.
 
 ## Known failure modes
 

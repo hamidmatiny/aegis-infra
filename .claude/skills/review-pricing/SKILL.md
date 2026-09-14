@@ -71,7 +71,7 @@ Push the **same real pricing review** (checked providers, material changes or "n
 2. `mcp__trinity__send_group_message` with that `chat_id` and the review text — not a placeholder.
 3. If Slack fails, say so plainly; do not claim delivery.
 
-Outbound visibility only — Slack must not be treated as approval to apply a rebalance. Hamid or `aegis-ceo` still approves before any live config change.
+Outbound visibility for Hamid — and Hamid may also ask you to run this skill via Slack. Slack must not be treated as approval to apply a rebalance. Hamid or `aegis-ceo` still approves before any live config change.
 
 ### Step 7: Escalate approved rebalances
 

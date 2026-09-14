@@ -67,9 +67,60 @@ Pull gate: exit 0 + four SHAs required; else abort with `status: pull-failed`. S
 
 ---
 
+## Proposal SU-2026-09-13-4 — Per-task Slack performance report (fleet channel template)
+
+**Status:** proposed (2026-09-13) — **not applied**  
+**Agents:** fleet (pilot candidate: `aegis-infra` or `aegis-analyst` first)  
+**Type:** new outbound skill step / shared report format — propose only
+
+**Gap:** Each agent's Slack channel shows skill output when wired, but not a consistent per-task card of *who assigned it, who it worked with, who it handed results to, and outcome* — so Hamid can't scan a channel like an employee work log.
+
+**Why now:** DN-1/DN-2 already depend on A2A `chat_with_agent` delivery confirmation; execution rows already carry assigner/trigger metadata. Hamid asked for a coworker-style trail in each agent's own channel. Must not invent fields (same discipline as the `paying_subscribers` comparison bug).
+
+### Real data available today (Trinity `schedule_executions` / agent executions API)
+
+| Report slot | Real fields (use only if present) | Do **not** invent |
+|-------------|-----------------------------------|-------------------|
+| Assigned-by | `triggered_by` (`chat` / `manual` / `mcp` / `agent` / `schedule` / `slack` / …); `source_user_email` + `source_user_id` when human; `source_agent_name` when A2A; `source_mcp_key_name` when MCP | A human name when only `source_agent_name` is set; "Hamid" when email is null |
+| Collaborators | Child / peer executions where `source_agent_name` is this agent **or** this run's confirmed `chat_with_agent` / `call_a2a_agent` results that returned an `execution_id` | A collaborator list inferred from prose; agents mentioned in the prompt but never called |
+| Handed-to | Confirmed outbound A2A targets from this run (same delivery-ack pattern as DN-1/DN-2) — agent name + exec id if returned | "escalated to ceo" without a confirmed send ack |
+| Outcome | `status`, `duration_ms`, `error` (if any), `id` (execution id), optional `cost` / `model_used` when non-null | Success when status ≠ success; a fabricated summary of work not in `response` / skill output |
+
+**Not first-class today:** a single `collaborators[]` column on the parent row. Collaborators must be assembled from confirmed tool/A2A results or related execution rows — if none, the report line is `collaborators: none` (explicit), never omitted-as-zero-people by defaulting.
+
+### Proposed Slack template (post to **this agent's** bound channel only)
+
+```text
+Task report — {agent_name}
+execution_id: {id}
+assigned_by: {source_user_email | source_agent_name | "trigger:"+triggered_by}   # first non-null; else "not returned by API"
+collaborators: {comma-separated agent names from confirmed A2A} | none
+handed_to: {comma-separated confirmed outbound targets} | none
+outcome: {status} · {duration_ms}ms
+error: {error}          # only if status failed / error non-null
+notes: {optional one-line skill title or schedule_id if not __manual__}
+```
+
+Rules:
+- Omit a line only when the field is structurally N/A (e.g. no `error` on success) — never fill gaps with `0` / `"unknown"` / guessed names.
+- Outbound-only; does **not** grant Slack inbound skill control.
+- Fail-closed: if channel unbound or `send_group_message` fails, say so in Trinity report / operator queue — do not claim "posted to Slack."
+
+**Proposed change:** new shared skill step (e.g. `/post-task-report`) or an end-of-skill block in each report-producing playbook; pilot on one agent after approval.
+
+**Tier/cost if approved:** free-pool (formatting + one proactive Slack send).  
+**Trinity mapping:** read own execution metadata via Trinity API/MCP; post via existing `list_channel_groups` + `send_group_message` (or `POST .../slack/channels/{id}/messages`). No new multi-channel binding required.  
+**Pilot scope:** one agent (`aegis-infra` or `aegis-analyst`) until a real post is verified in-channel.  
+**Depends on:** Hamid/`aegis-ceo` explicit **approved** / **approve**. Multi-channel "invite agent into any Slack thread" is **out of scope** (not supported by current Trinity create/bind API — see investigation).
+
+Reply **approved** / **approve** to accept, or decline with a reason. Nothing is applied until then.
+
+---
+
 ## Change log
 
 - 2026-09-13: File created. Logged SU-2026-09-13-1 and SU-2026-09-13-2 as proposed.
 - 2026-09-13: Both approved by Hamid; both applied (analyst verify step + infra `/verify-revenue-claim`; `memory/MEMORY.md` retrofit).
 - 2026-09-13: Proposed SU-2026-09-13-3; logged DN-2026-09-13-1/2; standing fail-closed check in `/propose-skill-upgrade` Step 2b.
 - 2026-09-13: SU-2026-09-13-3 approved+applied; DN-1 Option A and DN-2 Option B+mandatory queue approved+applied; A2A edges analyst→ceo and TI→ceo granted.
+- 2026-09-14: Proposed SU-2026-09-13-4 (per-task Slack performance report) — not applied. Created Slack channels `#aegis-threat-intel`, `#aegis-analyst`, `#the-brain` (outbound proactive + smoke posts confirmed).

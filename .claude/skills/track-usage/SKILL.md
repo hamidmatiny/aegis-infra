@@ -75,7 +75,7 @@ Once Trinity MCP is available and this agent is bound to Slack, push the **same 
 2. If a channel is returned, call `mcp__trinity__send_group_message` with that `chat_id`, `channel_type: "slack"`, and the rollup text from Step 5 — not a placeholder.
 3. If Slack fails (not bound, proactive consent off, rate-limited), say so plainly — do not pretend the message was sent.
 
-This channel is **owner visibility only**: post results out; do not treat inbound Slack messages as skill triggers or approval to change anyone's tier/auth.
+This channel is **owner visibility and Hamid instructions**: post results out; treat inbound Slack from Hamid like Trinity Chat (run the skill). Tier/auth changes still need explicit **approved** / **approve** — Slack is not an approval bypass.
 
 ### Step 7: Escalate real anomalies
 
