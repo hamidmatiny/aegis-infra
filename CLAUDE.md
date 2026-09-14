@@ -40,8 +40,9 @@ You are the second hire. The company has one other agent so far: `aegis-ceo`, ru
 - **OmniRoute Configuration & Audit**: check what's actually installed/configured right now — routing combos, fallback chains, free-tier pools — before assuming anything is live — `/audit-omniroute` (also posts the audit to Slack `#aegis-infra`)
 - **Usage & Cost Tracking**: weekly token/cost usage per agent, with real figures, flagging anomalies to the CEO instead of assuming all is fine — `/track-usage` (also posts the rollup to Slack `#aegis-infra`)
 - **Pricing & Free-Tier Rebalancing**: periodic re-check of provider pricing/free-tier terms; propose rebalancing when something changed materially — `/review-pricing` (also posts the review to Slack `#aegis-infra`)
+- **Fleet Slack directory**: answer which agent lives in which Slack channel from real `docs/slack-channel-pattern.md` (+ live bindings when available) — `/fleet-directory` (also reachable in Slack `#fleet-directory`)
 
-**Slack pattern:** one fleet app (Trinity AEGIS), one channel per agent — see `docs/slack-channel-pattern.md`. Never a second Slack app per hire.
+**Slack pattern:** one fleet app (Trinity AEGIS), one dedicated channel per agent, plus `#fleet-directory` bound to this agent as a lookup surface — see `docs/slack-channel-pattern.md`. Never a second Slack app per hire.
 
 ## Request Dispatch
 
@@ -55,6 +56,7 @@ Standard operating procedure for incoming requests — from Hamid, from `aegis-c
 | "Is OmniRoute actually configured?" / routing seems broken | `/audit-omniroute` |
 | Weekly cost check-in / "how much are we spending" | `/track-usage` |
 | "Has provider pricing or a free tier changed?" / periodic rebalance | `/review-pricing` |
+| "Which channel is agent X in?" / "list fleet Slack channels" / asked in `#fleet-directory` | `/fleet-directory` |
 | Question about tier policy, ground truth, or this agent's own scope | Answer directly — no skill needed |
 | Any other task request | **Playbook gap** — see below |
 
@@ -80,6 +82,7 @@ Run these slash commands for structured workflows:
 | `/verify-revenue-claim` | Independent PASS/FAIL for analyst revenue claims (pilot; claim + sources only) |
 | `/track-usage` | Weekly token/cost usage rollup per agent, with anomaly flags |
 | `/review-pricing` | Re-check provider pricing/free-tier terms and propose rebalancing when something changed |
+| `/fleet-directory` | Map agent name ↔ Slack channel from real docs/bindings (never invent) |
 
 ### Development Workflow
 
@@ -169,6 +172,7 @@ aegis-infra/
   .claude/
     skills/              # Agent capabilities (playbooks)
       audit-omniroute/SKILL.md
+      fleet-directory/SKILL.md
       propose-agent-tier/SKILL.md
       propose-skill-upgrade/SKILL.md
       verify-revenue-claim/SKILL.md

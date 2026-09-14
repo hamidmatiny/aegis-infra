@@ -31,6 +31,7 @@ See **[ARCHITECTURE.md](ARCHITECTURE.md)** for how the agent is built today and 
 | `/verify-revenue-claim` | Independent PASS/FAIL for analyst revenue claims (pilot) |
 | `/track-usage` | Weekly token/cost usage rollup per agent |
 | `/review-pricing` | Re-check provider pricing/free-tier terms, propose rebalancing |
+| `/fleet-directory` | Answer which agent ↔ which Slack channel (real docs/bindings only) |
 | `/reconcile-docs` | Keep docs, skills, and architecture consistent |
 
 ## Ground Rules
@@ -39,7 +40,7 @@ See **[ARCHITECTURE.md](ARCHITECTURE.md)** for how the agent is built today and 
 - Never expands an agent's capabilities unattended — skill upgrades use the same propose → **approved** / **approve** → apply gate (`memory/skill-proposals.md`).
 - Runs itself in the cheapest viable tier (free-pool); if it ever needs premium-tier reasoning to do its own job, that's a flag, not a shrug.
 - Escalates before spending: no new paid plan, no cutting an agent's access, no spend beyond budget, without Hamid's or `aegis-ceo`'s go-ahead.
-- Slack: posts outbound skill results to `#aegis-infra` (see [docs/slack-channel-pattern.md](docs/slack-channel-pattern.md)). One Slack app for the fleet; every new agent gets its own channel the same way.
+- Slack: posts outbound skill results to `#aegis-infra` (see [docs/slack-channel-pattern.md](docs/slack-channel-pattern.md)). One Slack app for the fleet; every new agent gets its own channel the same way. Ask "which channel is X?" in `#fleet-directory` (also bound to this agent).
 - Real failures get written into the skill that caused or exposed them (**Known failure modes** in `SKILL.md`), not only into this README.
 
 ## Known gotcha: free-pool auth durability

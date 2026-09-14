@@ -1,19 +1,25 @@
 # Slack channel pattern (fleet default)
 
-One Slack app for the whole fleet. One channel per agent. Outbound reports only.
+One Slack app for the whole fleet. One dedicated channel per agent (outbound reports). Plus `#fleet-directory` — a second binding on `aegis-infra` for "which channel is who?" lookup.
 
 ## Rule
 
 **Never create a second Slack app per agent.** The workspace already has **Trinity AEGIS** installed once (Socket Mode). Every new agent gets its own public channel and a Trinity binding to that channel.
 
+**Second binding note:** Trinity's convenience endpoint `POST /api/agents/{name}/slack/channel` returns `already_bound` if the agent already has a channel — that is an API idempotency/product guard, **not** a DB uniqueness on `agent_name`. The table `slack_channel_agents` is `UNIQUE(team_id, slack_channel_id)` only (one agent per channel). A second channel for the same agent is schema-legal; `#fleet-directory` was bound to `aegis-infra` that way. Caveat: UI `GET .../slack/channel` and `unbind` still treat "the" agent binding as singular (unbind removes all rows for that agent in the workspace).
+
 ## Naming
 
-Match the Trinity agent name, same as `#aegis-ceo` and `#aegis-infra`:
+Match the Trinity agent name for dedicated channels:
 
 ```text
-agent name  →  Slack channel
-aegis-ceo    →  #aegis-ceo
-aegis-infra  →  #aegis-infra
+agent name           →  Slack channel
+aegis-ceo             →  #aegis-ceo
+aegis-infra           →  #aegis-infra
+aegis-threat-intel    →  #aegis-threat-intel
+aegis-analyst         →  #aegis-analyst
+the-brain             →  #the-brain
+(directory)           →  #fleet-directory   (also bound to aegis-infra; ask /fleet-directory here)
 ```
 
 ## New-agent checklist
