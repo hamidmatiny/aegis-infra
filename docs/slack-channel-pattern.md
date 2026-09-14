@@ -27,9 +27,12 @@ aegis-infra           →  #aegis-infra
 aegis-threat-intel    →  #aegis-threat-intel
 aegis-analyst         →  #aegis-analyst
 aegis-core-infra      →  #aegis-core-infra
+aegis-data-quality    →  #aegis-data-quality   (C0C1QCJTNH0; bound 2026-09-14)
 the-brain             →  #the-brain
-(directory)           →  #fleet-directory   (also bound to aegis-infra; ask /fleet-directory here)
+(directory)           →  #fleet-directory   (also bound to aegis-infra only; ask /fleet-directory here)
 ```
+
+**Directory entry vs dual-bind:** `#fleet-directory` stays bound to `aegis-infra` (Slack binding is one agent per channel). New hires get a dedicated channel + a row in this table so `/fleet-directory` can find them — they are **not** also bound to `#fleet-directory`.
 
 ## New-agent checklist
 
