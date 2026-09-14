@@ -24,7 +24,7 @@ When a branch gets a real department head (second-layer hire), update **only** t
 | Cybersecurity | `aegis-ceo` | `aegis-threat-intel` | N/A (1 member) | |
 | Finance | `aegis-ceo` | `aegis-analyst` | N/A (1 member) | |
 | Engineering | `aegis-ceo` | `aegis-core-infra` | N/A (1 member) | |
-| Data / Quality | `aegis-ceo` (when hired) | *(none live yet)* | N/A | Incoming hire — confirm branch name with Hamid at onboard |
+| Data / Quality | `aegis-ceo` | `aegis-data-quality` | N/A (1 member) | Live 2026-09-14 (`github:hamidmatiny/aegis-data-quality@main`); free-pool OmniRoute |
 
 `trinity-system` is platform infrastructure, **not** a fleet branch member. Do not put it on this table or grant it fleet A2A edges for protocol work.
 
@@ -42,6 +42,8 @@ Every specialist must be able to reach its manager, and the manager must be able
 | `aegis-ceo` → `aegis-analyst` | Manager forwards to Finance | Present |
 | `aegis-core-infra` → `aegis-ceo` | Engineering escalates | Present |
 | `aegis-ceo` → `aegis-core-infra` | Manager forwards to Engineering | Present |
+| `aegis-data-quality` → `aegis-ceo` | Data/Quality escalates | **Granted** |
+| `aegis-ceo` → `aegis-data-quality` | Manager forwards to Data/Quality | **Granted** |
 | `the-brain` → `aegis-ceo` | VP ↔ CEO (also same-branch peer) | **Granted** |
 | `aegis-ceo` → `the-brain` | CEO ↔ VP | **Granted** |
 

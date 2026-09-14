@@ -58,7 +58,7 @@ Running record of proposed and approved tier/model assignments across the fleet.
 - Rely on OmniRoute's built-in compression.
 - Batch periodic data-quality sweeps into scheduled verification runs rather than continuous polling.
 - Reuse prior schema rules and validation baselines stored in memory rather than re-deriving validation checks on every run.
-**Status:** Approved by Hamid (2026-09-14, Slack). Ready for provisioning on OmniRoute free pool (`gemini/gemini-3.7-flash`). *(Recovered 2026-09-14 from `agent-aegis-infra` stash@{0} after A2A closeout pull would have dropped the volume-local approval.)*
+**Status:** Approved by Hamid (2026-09-14, Slack). Applied and live on Trinity (`github:hamidmatiny/aegis-data-quality@main`): auth `not_configured`, `use_platform_api_key=false`, OmniRoute `.env` + `.credentials.enc` in place, model `claude-sonnet-4-6` (free-pool combo). A2A hub `aegis-data-quality`↔`aegis-ceo` granted. *(Recovered from stash@{0} then onboarded 2026-09-14.)*
 
 ## Change log
 
@@ -69,3 +69,4 @@ Running record of proposed and approved tier/model assignments across the fleet.
 - 2026-09-14: Recorded `aegis-core-infra` mid-cost OmniRoute applied (subscription auto-assign cleared; platform API key off; Slack `#aegis-core-infra` `C0C1H5WD5NJ`; A2A core-infra↔ceo).
 - 2026-09-14: Mid-cost fallback chain fixed fleet-wide (`sonnet`/`aegis-mid` → DeepSeek Pro / GPT-OSS / Gemini Pro; no flash). Confirmed on `the-brain` + `aegis-core-infra` with real OmniRoute logs.
 - 2026-09-14: Proposed and approved free-pool tier (`gemini/gemini-3.7-flash`) for **Data/Quality Analyst** (`aegis-data-quality`) — Hamid Slack approval. Merged into committed file after stash recovery (A2A closeout pull).
+- 2026-09-14: `aegis-data-quality` deployed from GitHub, free-pool OmniRoute applied, A2A hub edges granted, routing table updated.
