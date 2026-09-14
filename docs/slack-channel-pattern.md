@@ -26,6 +26,7 @@ aegis-ceo             →  #aegis-ceo
 aegis-infra           →  #aegis-infra
 aegis-threat-intel    →  #aegis-threat-intel
 aegis-analyst         →  #aegis-analyst
+aegis-core-infra      →  #aegis-core-infra
 the-brain             →  #the-brain
 (directory)           →  #fleet-directory   (also bound to aegis-infra; ask /fleet-directory here)
 ```

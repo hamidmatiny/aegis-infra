@@ -23,7 +23,16 @@ Running record of proposed and approved tier/model assignments across the fleet.
 **Token-saving habits assigned:** filter feeds upstream before pulling full text into context; rely on OmniRoute's built-in compression; batch related CVE checks into one consolidated pass; reuse prior findings/baselines from its own memory instead of re-deriving history each time.
 **Status:** Approved by CEO / Hamid (2026-09-13). Applied and live on OmniRoute free-pool (verified 2026-09-13: chat traffic `Provider: gemini`, platform API key disabled, OmniRoute `.env` + `.credentials.enc` in place).
 
+## aegis-core-infra
+
+**Tier:** Mid-cost — paid API via OmniRoute cost-optimized routing (chat alias `sonnet`; candidates `claude-sonnet-4-5` / `gemini/gemini-3.1-pro-preview`).
+**Why:** Real Docker/CI/migration reasoning needs more than free-pool reliably provides; no write/deploy/block authority so Claude Pro subscription is not warranted.
+**Auth mode:** OmniRoute API-key routing, not subscription auth (mutually exclusive per agent). `use_platform_api_key=false`; subscription cleared after create-time auto-assign to Hamid's Pro.
+**Token-saving habits assigned:** query specific diffs/targeted files; OmniRoute compression; batch review passes; reuse `memory/` baselines.
+**Status:** Approved by Hamid (2026-09-14 hire brief). Applied and live on Trinity (`github:hamidmatiny/aegis-core-infra@main`): auth `not_configured`, model `sonnet`, OmniRoute `.env` + `.credentials.enc` in place. Note: in-memory `sonnet` alias does not survive restart (same class as `the-brain`) — re-PUT model after restart until durable.
+
 ## Change log
 
 - 2026-09-13: File created. Backfilled `aegis-ceo` (live, premium) and `aegis-infra` (proposed, free-pool, not yet applied) for context. Recorded `aegis-threat-intel`'s tier (proposed, free-pool via OmniRoute/gemini-3.7-flash, not yet applied — dependency on OmniRoute + an explicit auth-mode switch, neither confirmed done).
 - 2026-09-13: Folded container "TI Approved" update into this file. Marked `aegis-threat-intel` approved by CEO/Hamid and live on OmniRoute free-pool after explicit auth flip. Marked `aegis-infra` live on the same free-pool path (subscription cleared; OmniRoute `.env` durable via `.credentials.enc`).
+- 2026-09-14: Recorded `aegis-core-infra` mid-cost OmniRoute applied (subscription auto-assign cleared; platform API key off; Slack `#aegis-core-infra` `C0C1H5WD5NJ`; A2A core-infra↔ceo).
