@@ -63,6 +63,18 @@ Same-branch peers may message directly; cross-branch traffic goes through the br
 
 **Verify:** `jobs[].next_run` on `/api/agents/scheduler/status` must be **in the future**. Past + `last_run_at=null` = stuck. Fix: disable→enable the schedule (wait ~60s for sync) or restart `trinity-scheduler`. Affects every agent's cron on this instance.
 
+**Related (2026-09-15):** host/Docker sleep can also miss a fire window even when `next_run` looked healthy beforehand — see the next gotcha. Prefer the runtime sync catch-up over relying on disable→enable alone.
+
+## Known gotcha: host/Docker sleep can miss schedule fires (fleet-wide, 2026-09-15)
+
+**What broke:** `trinity-scheduler` is a **shared** process for every agent's crons. On a laptop / Docker Desktop, host sleep freezes that process **without** restarting the container. Health checks showed multi-minute gaps (e.g. ~83 min straddling `2026-09-15T08:00Z`). APScheduler often does **not** misfire-recover those windows after wake. Boot-only catch-up (#145) never runs (container stayed up). Symptom for `aegis-ceo` `Daily trajectory review` (`0 8 * * *`): UI Active / Overdue / "0 runs", job still registered, **no** `Executing schedule … triggered_by=schedule` at 08:00 — not an agent-redeploy wipe.
+
+**Fleet scope (checked live 2026-09-15):** Only **one** schedule was enabled on this instance — `aegis-ceo` / Daily trajectory review. All other hire schedules (`aegis-infra`, `aegis-threat-intel`, `aegis-analyst`, `aegis-core-infra`, `aegis-data-quality`, `the-brain`) were `enabled: false` (or had no schedules). So no second agent was found already stuck in the same enabled+overdue state. The failure mode is still **fleet-wide**: any future enabled cron on any agent shares `trinity-scheduler` and the same sleep gap.
+
+**Mitigation (local Trinity checkout):** runtime `_recover_overdue_schedules` on every schedule sync tick (~60s) in `src/scheduler/service.py` — within `MISFIRE_GRACE_TIME` catch-up fire; past grace advance `next_run_at` only. Verified: rebuilt `trinity-scheduler` image; overdue `next_run_at` within grace → `Runtime catch-up: firing …` + new `triggered_by=schedule` execution. Survives scheduler container recreate when the image includes the fix; does **not** require disable→enable after agent redeploys.
+
+**Ops check:** after a long host sleep, confirm `GET /api/agents/scheduler/status` `jobs[].next_run` is future, and look for `Runtime catch-up` in `trinity-scheduler` logs if a window was straddled.
+
 ## Known gotcha: free-pool auth durability
 
 Trinity DB settings (`no subscription` + `use_platform_api_key=false`) and the agent's OmniRoute `.env` (usually re-injected from `.credentials.enc` on start) survive normal recreates. Free-pool auth **breaks** and needs **manual reinjection** of the OmniRoute `.env` (and a restart) if:
