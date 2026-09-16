@@ -9,6 +9,7 @@ metadata:
   created: 2026-09-15
   author: aegis-infra
   changelog:
+    - "1.1: Pull free-pool ceiling from live OmniRoute SQLite mount (same path resolution as /token-budget Step 0)"
     - "1.0: Initial — schedule-derived allocation, 20% reserve (infra-owned), surplus→SI, stampede stagger"
 ---
 
@@ -31,6 +32,10 @@ Turn real Trinity schedule/workload data into a per-agent daily token/request al
 - Record every change in `memory/reserve-policy.md`.
 
 ## Process
+
+### Step 0: Live OmniRoute SQLite (shared with /token-budget)
+
+Before budgeting against free-pool RPD ceilings, resolve the **live** OmniRoute DB the same way `/token-budget` does — prefer `$HOME/.omniroute/storage.sqlite` (host bind mount via `scripts/mount-omniroute-sqlite.sh`), never a one-time `memory/` copy. If only `memory/omniroute-storage.sqlite` exists, label the allocation **STALE RISK** and say to re-run the mount script. Cite the path used.
 
 ### Step 1: Pull real workload (not a guess)
 
@@ -87,6 +92,8 @@ Update:
 - `memory/reserve-utilization.md` — whether reserve was touched (and by how much) when known
 
 Slack `#aegis-infra` with the allocation table + any reserve-policy change. Optional Trinity report `aegis_infra.daily_allocation`.
+
+When the SI assignment message (or any Slack close-out) is posted — by this agent or by the specialist running the SI slot — obey **CLAUDE.md HARD GATE — Slack / chat text hygiene**: no `Co-Authored-By` / `Generated with Claude Code` / commit trailers. SI is an explicit covered path.
 
 ## Outputs
 

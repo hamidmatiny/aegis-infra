@@ -16,6 +16,14 @@ Slack @mentions from **Hamid** (verified owner email) in a bound channel are rea
 
 Platform note: Trinity defaults Slack to `channel_allowed_tools=WebSearch,WebFetch`. Owner/shared senders who pass `email_has_agent_access` get full tools (same as authenticated chat) via the message router — strangers do not.
 
+## Completed-task close-out (fleet-wide, mandatory)
+
+Every agent posts a completed-task report to **its own** Slack channel at the end of every task (skill, reminder, schedule, chat, A2A) — not only skills that historically mentioned Slack. Required fields: what was asked, who asked, what was done, real outcome (incl. failures), who the result was reported to. Trinity `report` is not a substitute. Durable home: each agent's `CLAUDE.md` § "HARD GATE — Slack completed-task close-out".
+
+## Slack / chat text hygiene (fleet-wide, mandatory)
+
+Every outbound Slack / chat-facing post must **not** include git or Claude Code commit-message chrome — including **self-improvement (SI) slot** runs, not only skill Final steps. Banned: `Co-Authored-By:…`, `Signed-off-by:…`, `Generated with Claude Code`, `noreply@anthropic.com`. Strip before `send_group_message`. Same lesson as the close-out gate: a per-skill patch is not a universal fix. Durable home: each agent's `CLAUDE.md` § "HARD GATE — Slack / chat text hygiene".
+
 ## Naming
 
 Match the Trinity agent name for dedicated channels:
@@ -28,6 +36,8 @@ aegis-threat-intel    →  #aegis-threat-intel
 aegis-analyst         →  #aegis-analyst
 aegis-core-infra      →  #aegis-core-infra
 aegis-data-quality    →  #aegis-data-quality   (C0C1QCJTNH0; bound 2026-09-14)
+aegis-growth           →  #aegis-growth
+aegis-scout            →  #aegis-scout          (C0C297RQ7PY; bound 2026-09-16)
 the-brain             →  #the-brain
 (directory)           →  #fleet-directory   (also bound to aegis-infra only; ask /fleet-directory here)
 ```
