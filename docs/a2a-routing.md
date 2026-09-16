@@ -2,12 +2,53 @@
 
 **Scope:** Hamid's personal agent company on Trinity. Not `corp-orchestrator` (Track A).
 
-**Protocol (Hamid, 2026-09-14):**
+There are **two separate protocols**. Do not conflate them:
+
+| Situation | Which protocol | What you do |
+|-----------|----------------|-------------|
+| "I need agent X to do a task / I need work from another branch" | **Task routing** (below) | Same-branch → message peer directly. Cross-branch → message **your manager**; manager forwards. |
+| "I'm not sure whether I should do X" (judgment / ambiguity) | **Uncertainty escalation** (below) | Ask your **own manager** first; consult peers; escalate up the management chain; Hamid is **last** resort — never first. |
+
+---
+
+## Protocol A — Task routing (Hamid, 2026-09-14)
+
+Use when the ask is a **routine work request**: run a playbook, fetch a number, review a diff, forward an assignment.
 
 1. **Same branch → direct.** Peers in the same department/branch may message each other both ways via Trinity A2A permissions (`POST /api/agents/{name}/permissions/{other}`).
 2. **Cross branch → manager-routed.** An agent must not message another branch's agent directly. It messages its **manager**; the manager messages the target branch's manager (or the agent, if the manager *is* that branch's head); the manager decides whether/how to forward — not a silent passthrough.
 
 **Fail closed:** if branch membership is ambiguous, treat as cross-branch (manager-routed). Never propose a new direct cross-branch A2A edge; refuse and point at this table.
+
+---
+
+## Protocol B — Uncertainty / judgment-call escalation (Hamid, 2026-09-15)
+
+Use when you face a **real decision you are unsure about** — "should I do this or not?" — not when you merely need someone else to execute a clear task.
+
+**This does not override Protocol A.** Cross-branch *task* requests still go through managers. Uncertainty is about *whether to act*, not about who does the work.
+
+### Order (mandatory)
+
+1. **Ask your own manager first** (`manager` column in the roster table below — today usually `aegis-ceo`).
+2. **Also consult peers:** same-branch colleagues at the **same or higher** career-ladder level as you; then other same-branch teammates. (Peers advise; they do not replace the manager.)
+3. **If your manager cannot resolve it**, the manager escalates **up its own chain** — asks *its* manager, and so on.
+4. **Only if the chain reaches `aegis-ceo` and the CEO also cannot resolve it** does the question go to **Hamid**. Hamid is the final fallback, not the first stop.
+
+### Explicit anti-patterns
+
+- Skipping the manager and asking Hamid first because it "feels faster"
+- Treating a judgment call as a Protocol A cross-branch task and pinging an unrelated specialist for permission
+- Self-authorizing a risky action because "peers seemed fine with it" without manager input when you were actually unsure
+
+### Examples
+
+| Ask | Protocol |
+|-----|----------|
+| "Please run `/check-revenue` and send me the number" | A — task routing |
+| "Should I publish this revenue claim without a `PASS:` from infra verify because verify is timing out?" | B — uncertainty |
+| "Forward this deploy-risk flag to core-infra" | A — task routing (manager forwards) |
+| "I'm unsure whether this CVE is urgent enough to wake Hamid vs LOG-only" | B — uncertainty (ask manager first) |
 
 ## How to change a branch's manager later
 
