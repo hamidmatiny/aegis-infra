@@ -66,6 +66,8 @@ When a branch gets a real department head (second-layer hire), update **only** t
 | Finance | `aegis-ceo` | `aegis-analyst` | N/A (1 member) | |
 | Engineering | `aegis-ceo` | `aegis-core-infra` | N/A (1 member) | |
 | Data / Quality | `aegis-ceo` | `aegis-data-quality` | N/A (1 member) | Live 2026-09-14 (`github:hamidmatiny/aegis-data-quality@main`); free-pool OmniRoute |
+| Growth / Marketing | `aegis-ceo` | `aegis-growth` | N/A (1 member) | Live; free-pool OmniRoute |
+| Capability / Learning (service) | `aegis-ceo` | `aegis-scout` | N/A (1 member) | Live 2026-09-16 (`github:hamidmatiny/aegis-scout@main`); mid-cost OmniRoute; service role (not a manager). **Grid tags (2026-09-16):** `dept-scout` + `reports-to-aegis-ceo` (A2A ≠ department overlay — both required). |
 
 `trinity-system` is platform infrastructure, **not** a fleet branch member. Do not put it on this table or grant it fleet A2A edges for protocol work.
 
@@ -85,6 +87,10 @@ Every specialist must be able to reach its manager, and the manager must be able
 | `aegis-ceo` → `aegis-core-infra` | Manager forwards to Engineering | Present |
 | `aegis-data-quality` → `aegis-ceo` | Data/Quality escalates | **Granted** |
 | `aegis-ceo` → `aegis-data-quality` | Manager forwards to Data/Quality | **Granted** |
+| `aegis-growth` → `aegis-ceo` | Growth escalates | **Granted** |
+| `aegis-ceo` → `aegis-growth` | Manager forwards to Growth | **Granted** |
+| `aegis-scout` → `aegis-ceo` | Scout assigns learning / escalates | **Granted** (2026-09-16) |
+| `aegis-ceo` → `aegis-scout` | Manager replies / assigns Scout | **Granted** (2026-09-16) |
 | `the-brain` → `aegis-ceo` | VP ↔ CEO (also same-branch peer) | **Granted** |
 | `aegis-ceo` → `the-brain` | CEO ↔ VP | **Granted** |
 
