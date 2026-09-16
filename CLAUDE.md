@@ -64,6 +64,8 @@ Include at least:
 - **Revenue claim verification (pilot)**: structural PASS/FAIL for `aegis-analyst` claims — claim + cited sources only — `/verify-revenue-claim`
 - **OmniRoute Configuration & Audit**: check what's actually installed/configured right now — routing combos, fallback chains, free-tier pools — before assuming anything is live — `/audit-omniroute` (also posts the audit to Slack `#aegis-infra`)
 - **Usage & Cost Tracking**: weekly token/cost usage per agent, with real figures, flagging anomalies to the CEO instead of assuming all is fine — `/track-usage` (also posts the rollup to Slack `#aegis-infra`)
+- **Token budget horizons**: best real remaining today/week/month per OmniRoute provider — true balance when queryable, honest rate-limit proxies otherwise; never fabricate — `/token-budget`
+- **Daily allocation + reserve + SI**: schedule-derived per-agent daily budgets, emergency reserve (infra-owned %, starts 20%), surplus → manager-judged self-improvement, stampede-aware stagger — `/daily-allocation`
 - **Pricing & Free-Tier Rebalancing**: periodic re-check of provider pricing/free-tier terms; propose rebalancing when something changed materially — `/review-pricing` (also posts the review to Slack `#aegis-infra`)
 - **Fleet Slack directory**: answer which agent lives in which Slack channel from real `docs/slack-channel-pattern.md` (+ live bindings when available) — `/fleet-directory` (also reachable in Slack `#fleet-directory`)
 
@@ -89,6 +91,8 @@ Standard operating procedure for incoming requests — from Hamid, from `aegis-c
 | Independent PASS/FAIL on an analyst revenue claim (claim + sources only) | `/verify-revenue-claim` |
 | "Is OmniRoute actually configured?" / routing seems broken | `/audit-omniroute` |
 | Weekly cost check-in / "how much are we spending" | `/track-usage` |
+| "What's left in the token/quota budget?" / remaining today/week/month | `/token-budget` |
+| Daily allocation / reserve / self-improvement spend plan | `/daily-allocation` |
 | "Has provider pricing or a free tier changed?" / periodic rebalance | `/review-pricing` |
 | "Which channel is agent X in?" / "list fleet Slack channels" / asked in `#fleet-directory` | `/fleet-directory` |
 | Question about tier policy, ground truth, or this agent's own scope | Answer directly — no skill needed |
@@ -115,6 +119,8 @@ Run these slash commands for structured workflows:
 | `/propose-skill-upgrade` | Propose skill / verification / memory upgrades for live agents; never applies; no schedule until enabled |
 | `/verify-revenue-claim` | Independent PASS/FAIL for analyst revenue claims (pilot; claim + sources only) |
 | `/track-usage` | Weekly token/cost usage rollup per agent, with anomaly flags |
+| `/token-budget` | Best real quota/horizon numbers (or honest proxies) per provider |
+| `/daily-allocation` | Schedule-derived daily budgets, reserve, SI surplus, stampede stagger |
 | `/review-pricing` | Re-check provider pricing/free-tier terms and propose rebalancing when something changed |
 | `/fleet-directory` | Map agent name ↔ Slack channel from real docs/bindings (never invent) |
 

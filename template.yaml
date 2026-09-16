@@ -86,21 +86,35 @@ schedules:
     timezone: UTC
     message: "/track-usage"
     purpose: Cost/usage tracking (core mission #3)
-    enabled: false
+    enabled: true
+  - id: daily-token-budget
+    name: Daily token budget
+    cron: "0 7 * * *"
+    timezone: UTC
+    message: "/token-budget"
+    purpose: Honest remaining-horizon report before the workday
+    enabled: true
+  - id: daily-allocation
+    name: Daily allocation
+    cron: "10 7 * * *"
+    timezone: UTC
+    message: "/daily-allocation"
+    purpose: Task/reserve/SI budgets from real schedules; stampede stagger
+    enabled: true
   - id: pricing-recheck
     name: Pricing & free-tier re-check
     cron: "0 9 */14 * *"
     timezone: UTC
     message: "/review-pricing"
     purpose: Catch provider pricing/free-tier drift (core mission #4)
-    enabled: false
+    enabled: true
   - id: dashboard-refresh
     name: Dashboard refresh
     cron: "0 */6 * * *"
     timezone: UTC
     message: "/update-dashboard"
     purpose: Keep the fleet cost/tier snapshot current
-    enabled: false
+    enabled: true
   - id: doc-reconciliation
     name: Doc reconciliation
     cron: "0 9 * * 1"
