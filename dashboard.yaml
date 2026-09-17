@@ -1,6 +1,6 @@
 title: "AEGIS Infra"
 refresh: 300
-updated: "2026-09-13T00:00:00Z"
+updated: "2026-09-17T23:20:00Z"
 
 sections:
   - title: "Status"
@@ -13,9 +13,9 @@ sections:
         color: green
       - type: status
         label: "OmniRoute"
-        value: "Unaudited"
-        color: gray
-        description: "Set by /audit-omniroute — updated to green/yellow/red once checked"
+        value: "Live"
+        color: yellow
+        description: "Reachable on :20129; 503 admission/capacity under concurrent free-pool load"
       - type: metric
         label: "Own Tier"
         value: "free-pool"
@@ -27,8 +27,8 @@ sections:
     widgets:
       - type: metric
         label: "Agents Tracked"
-        value: "1"
-        description: "aegis-ceo — updated by /update-dashboard"
+        value: "15"
+        description: "Personal fleet excl. trinity-system — verified GET /api/agents 2026-09-17"
       - type: metric
         label: "Anomalies This Week"
         value: "—"
@@ -43,15 +43,36 @@ sections:
     widgets:
       - type: table
         title: "Agents by Tier"
-        columns: ["Agent", "Tier", "Provider/Model"]
-        rows: []
+        columns: ["Tier", "Count"]
+        rows: [["Premium", "1"], ["Mid-cost", "4"], ["Free-pool", "10"]]
+      - type: table
+        title: "Roster"
+        columns: ["Agent", "Tier"]
+        rows:
+          - ["aegis-ceo", "Premium"]
+          - ["the-brain", "Mid-cost"]
+          - ["aegis-core-infra", "Mid-cost"]
+          - ["aegis-scout", "Mid-cost"]
+          - ["aegis-product-eng", "Mid-cost"]
+          - ["aegis-infra", "Free-pool"]
+          - ["aegis-threat-intel", "Free-pool"]
+          - ["aegis-analyst", "Free-pool"]
+          - ["aegis-data-quality", "Free-pool"]
+          - ["aegis-growth", "Free-pool"]
+          - ["aegis-gateway", "Free-pool"]
+          - ["aegis-policy-engine", "Free-pool"]
+          - ["aegis-model-router", "Free-pool"]
+          - ["aegis-agent-gate", "Free-pool"]
+          - ["aegis-audit", "Free-pool"]
 
   - title: "Recent Activity"
     layout: list
     widgets:
       - type: list
         title: "Recent Rollups & Reviews"
-        items: []
+        items:
+          - "Agents Tracked 8→15 (Phase 1 SE I + PE manager + scout) — 2026-09-17"
+          - "SI still deferred (2026-09-15 stampede; daily-allocation cancelled 2026-09-16)"
         max_items: 5
 
   - title: "Quick Links"
