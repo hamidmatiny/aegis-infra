@@ -149,10 +149,10 @@ Do **not** expand these edges into ad-hoc cross-branch tasking. Cross-branch wor
 
 | Edge | Purpose | Status |
 |------|---------|--------|
-| `aegis-threat-intel` → `aegis-redteam` | TI finds attack technique in feeds | Grant on redteam hire |
-| `aegis-scout` → `aegis-redteam` | Scout finds learning item that is an attack technique | Grant on redteam hire |
-| `aegis-ceo` → `aegis-redteam` | Manager forward / assign attack batch | Grant on redteam hire |
-| `aegis-redteam` → `aegis-ceo` | Confirmed bypass → CEO decision | Grant on redteam hire |
+| `aegis-threat-intel` → `aegis-redteam` | TI finds attack technique in feeds | **Granted** 2026-09-20 |
+| `aegis-scout` → `aegis-redteam` | Scout finds learning item that is an attack technique | **Granted** 2026-09-20 |
+| `aegis-ceo` → `aegis-redteam` | Manager forward / assign attack batch | **Granted** 2026-09-20 |
+| `aegis-redteam` → `aegis-ceo` | Confirmed bypass → CEO decision | **Granted** 2026-09-20 |
 
 Same-branch Cyber peers (`aegis-threat-intel` ↔ `aegis-redteam`) may also use Protocol A direct once both are in Cybersecurity.
 
