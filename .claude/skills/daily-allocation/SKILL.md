@@ -79,10 +79,12 @@ Shared free Gemini key failure mode: concurrent agents → 429 stampede.
 Rules:
 
 1. At most **one** free-pool self-improvement run in flight fleet-wide.
-2. Stagger SI windows by agent (UTC), e.g.:
-   - `aegis-infra` 15:00 · `aegis-threat-intel` 16:00 · `aegis-analyst` 17:00 · `aegis-data-quality` 18:00 · `aegis-growth` 19:00 · mid-cost SI on separate CFP path when available
+2. Stagger SI windows by agent (UTC). **Build the stagger list every run from live `list_agents`** (exclude `trinity-system` and premium subscription agents that do not share the free-pool key). Do not freeze a 5–7 agent example. Example spacing (+60 min): assign free-pool agents in name-sort order starting 15:00 UTC; mid-cost OmniRoute agents on a separate CFP path when available. Example (illustrative only — regenerate from live roster):
+   - free-pool: infra 15:00 · threat-intel 16:00 · analyst 17:00 · data-quality 18:00 · growth 19:00 · scout / redteam / others continue +1h
 3. Core scheduled jobs also stagger where crons would collide on the minute — prefer existing template crons; if two fire same minute, offset one by +5–10 minutes via schedule update and log it.
-4. Before starting SI, run `/token-budget` (or read today's log): if Gemini family already showing sustained 429s, **defer SI** and spend only task+reserve.
+4. Before starting SI, run `/token-budget` (or read today's log): if Gemini family already showing sustained 429s / 503s, **defer SI** and spend only task+reserve.
+5. **Live SI schedule gate (enforced in schedule message + here):** SI slots must check spare capacity **before** any skill edit. If `si_budget` for today is 0, SI was deferred in `memory/daily-allocations.md`, or OmniRoute is already exhausted (sustained 429/503), the agent replies `NONE (no surplus capacity)` and exits — schedules still fire, but must not burn capacity. Stagger alone is not a capacity check.
+6. **Coverage check:** after writing `memory/daily-allocations.md`, assert every non-system agent from today's `list_agents` appears in the table (or is explicitly marked N/A with reason, e.g. premium CEO). If any hire is missing, that is a bug — fix before Slack close-out.
 
 ### Step 5: Persist, report, Slack
 

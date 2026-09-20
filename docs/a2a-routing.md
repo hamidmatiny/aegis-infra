@@ -62,7 +62,7 @@ When a branch gets a real department head (second-layer hire), update **only** t
 |--------|-----------------|------------------|--------------------|-------|
 | Executive | `aegis-ceo` (founder-facing; peers with VP) | `aegis-ceo`, `the-brain` (VP) | **Wired** `aegis-ceo ↔ the-brain` | Only branch with 2+ members as of 2026-09-14 |
 | Infrastructure & Compute | `aegis-ceo` | `aegis-infra` | N/A (1 member) | |
-| Cybersecurity | `aegis-ceo` | `aegis-threat-intel` | N/A (1 member) | |
+| Cybersecurity | `aegis-ceo` | `aegis-threat-intel`, `aegis-redteam` | Direct once both live (Protocol A + D) | Redteam hired 2026-09-20 — live gateway attacks |
 | Finance | `aegis-ceo` | `aegis-analyst` | N/A (1 member) | |
 | Engineering | `aegis-ceo` | `aegis-core-infra` | N/A (1 member) | Grid: `dept-engineering` |
 | Product Engineering | **`aegis-product-eng`** → `aegis-ceo` | Manager: `aegis-product-eng`. ICs: `aegis-gateway`, `aegis-policy-engine`, `aegis-model-router`, `aegis-agent-gate`, `aegis-audit` | **Wired** IC↔manager + IC peer mesh; manager↔CEO. Direct IC↔CEO A2A **revoked** (middle hop real). | Manager hire 2026-09-17 (L5 structural exception). Grid: ICs `reports-to-aegis-product-eng`; manager `dept-product-engineering` + `reports-to-aegis-ceo`. |
@@ -133,6 +133,32 @@ Examples that must **not** be added:
 | `aegis-infra` → `aegis-ceo` | Post-HOLD notify (already existed) | Present |
 
 Do **not** expand these edges into ad-hoc cross-branch tasking. Cross-branch work still uses Protocol A via CEO. Uncertainty about *whether* to HOLD still uses Protocol B if the threshold is ambiguous.
+
+---
+
+## Protocol D — Attack-technique handoff → `aegis-redteam` (Hamid, 2026-09-20)
+
+**Problem:** Agents that encounter a newly published jailbreak / prompt-injection / PII-exfil technique during normal work (CVE feeds, papers, browsing, scout finds) had nowhere to put it. Knowledge died in a report.
+
+**Sink:** `aegis-redteam` — tests the technique against the **live** gateway (`POST https://defenseaegis.org/v1/chat/completions`), logs pass/fail with transcripts, and on a **confirmed currently-working bypass** escalates to `aegis-ceo` as a **decision point** (new policy, new detection, enforcement fix) — not a soft log-only finding.
+
+**How to hand off**
+
+1. Prefer **manager-routed** (Protocol A): finder → own manager → `aegis-ceo` → `aegis-redteam` with the technique + source URL + example prompts.
+2. **Standing exception edges** (narrow — technique handoff only, not general chat), once granted:
+
+| Edge | Purpose | Status |
+|------|---------|--------|
+| `aegis-threat-intel` → `aegis-redteam` | TI finds attack technique in feeds | Grant on redteam hire |
+| `aegis-scout` → `aegis-redteam` | Scout finds learning item that is an attack technique | Grant on redteam hire |
+| `aegis-ceo` → `aegis-redteam` | Manager forward / assign attack batch | Grant on redteam hire |
+| `aegis-redteam` → `aegis-ceo` | Confirmed bypass → CEO decision | Grant on redteam hire |
+
+Same-branch Cyber peers (`aegis-threat-intel` ↔ `aegis-redteam`) may also use Protocol A direct once both are in Cybersecurity.
+
+**Redteam obligations on receipt:** run `/ingest-technique` (or `/attack-gateway` for batches). Never claim tested without a live transcript. Confirmed bypass → `/file-bypass` + `chat_with_agent` → `aegis-ceo`.
+
+**Org chart:** whole-company orientation (not just manager/reports) lives at [`docs/org-chart.md`](./org-chart.md).
 
 ---
 

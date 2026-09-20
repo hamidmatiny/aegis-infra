@@ -57,9 +57,19 @@ Pause these when **enabled**. Skip if already disabled (do not claim credit).
 | `aegis-analyst` | Daily revenue check; Self-improvement |
 | `aegis-core-infra` | Daily infra diff review |
 | `aegis-threat-intel` | Threat scan; Self-improvement |
+| `aegis-redteam` | Live gateway attack batch; Self-improvement |
 | `aegis-data-quality` | Fleet output review; Self-improvement |
 | `aegis-growth` | Daily growth check; Self-improvement; Weekly SEO draft; Weekly directory pass |
+| `aegis-scout` | Fleet capability scout; Founder learning; Self-improvement |
+| `aegis-product-eng` | Self-improvement; Dashboard refresh |
+| `aegis-gateway` | Self-improvement |
+| `aegis-policy-engine` | Self-improvement |
+| `aegis-model-router` | Self-improvement |
+| `aegis-agent-gate` | Self-improvement |
+| `aegis-audit` | Self-improvement |
 | `aegis-infra` | Self-improvement (staggered); Dashboard refresh |
+
+Resolve the **live** schedule list each run via `list_agent_schedules` for **every** agent returned by `list_agents` (minus `trinity-system`). The table above is a hint — if a free-pool/mid-cost agent has an autonomous schedule not listed, include it.
 
 **Never pause** (capacity sensing + recovery path):
 
