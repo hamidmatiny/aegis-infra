@@ -5,7 +5,7 @@
 
 **How to refresh:** call Trinity `list_agents` (exclude `trinity-system`). Do **not** treat this table as forever-true — tags + live list win when they disagree.
 
-*Snapshot: 2026-09-20 from live `list_agents` (15 fleet agents). Updated when `aegis-redteam` hired.*
+*Snapshot: 2026-09-20 from live `list_agents` — **16** fleet agents (was 15 before `aegis-redteam`).*
 
 ```
 Hamid (founder)
