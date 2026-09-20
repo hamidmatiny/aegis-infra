@@ -1,9 +1,12 @@
 # Fleet org chart (Track B — personal Trinity agents)
 
 **Canonical location:** this file in `aegis-infra` (`docs/org-chart.md`).  
-**Also linked from:** each agent's `CLAUDE.md` (pointer only) and `aegis-infra/docs/a2a-routing.md`.
+**Also linked from:** each agent's `CLAUDE.md` (pointer only) and `aegis-infra/docs/a2a-routing.md`.  
+**Public verification:** [docs/public-verification.md](./public-verification.md) (unauthenticated GitHub URLs).
 
 **How to refresh:** call Trinity `list_agents` (exclude `trinity-system`). Do **not** treat this table as forever-true — tags + live list win when they disagree.
+
+**Standing rule — Cursor workspace:** every new hire’s repo/folder is added to `/Users/hamidrezamatiny/Cursor/aegis-fleet.code-workspace` during onboarding (same pass as Trinity deploy / `/propose-agent-tier`), not later. See `/propose-agent-tier` Step 0.
 
 *Snapshot: 2026-09-20 from live `list_agents` — **16** fleet agents (was 15 before `aegis-redteam`).*
 

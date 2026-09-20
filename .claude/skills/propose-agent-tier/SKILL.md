@@ -23,6 +23,16 @@ Decide which of the three tiers a given agent role should run on, and which spec
 
 ## Process
 
+### Step 0: Cursor workspace (standing rule — do not skip)
+
+Every new hire’s local clone **must** be added to the fleet Cursor multi-root workspace in the same onboarding pass as `/trinity:onboard` / tier proposal — not later as an afterthought.
+
+1. Clone under `/Users/hamidrezamatiny/Cursor/<agent-name>` (preferred) or the existing home-dir pattern.
+2. Add a folder entry to `/Users/hamidrezamatiny/Cursor/aegis-fleet.code-workspace` (and keep `aegis/redteam/scripts/aegis-company.code-workspace` in sync if still used).
+3. Confirm the folder appears in the Cursor workspace sidebar before closing the hire checklist.
+
+Source of truth for the roster: Trinity `list_agents` + `docs/org-chart.md`. Workspace membership must match the live roster (excluding `trinity-system`).
+
 ### Step 1: Gather the role's actual requirements
 
 Ask (via `AskUserQuestion` if not already given):
