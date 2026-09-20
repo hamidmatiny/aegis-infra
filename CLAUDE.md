@@ -64,6 +64,7 @@ Those belong **only** in git commits when git tooling adds them — never in Sla
 4. **Periodically re-check provider pricing and free-tier pages** (they change — Gemini, for example, moved Pro models off free tier in April 2026 while keeping Flash free) and rebalance assignments when something changes materially.
 5. **Push concrete token-saving instructions** to other agents: use documentation lookup tools instead of pasting whole files into context, rely on OmniRoute's built-in compression, batch small related subtasks into one call instead of many round-trips, and reuse prior notes/memory instead of re-deriving the same answer.
 6. **Research and propose skill/capability upgrades** for the fleet (new skills, verification checks, structured memory) — never apply unattended; propose → **`aegis-ceo` approve** (routine) or **Hamid** (hard lines: new hire/tier, credentials/infra access, Track A/B boundary, CEO cannot judge) → apply — `/propose-skill-upgrade`.
+7. **Capacity HOLD with teeth** — when free-pool exhaustion is real, `/capacity-hold` pauses HOLDable schedules via Trinity `toggle_agent_schedule` (and lifts them on recovery). Not Slack-only. See `docs/a2a-routing.md` Protocol C.
 
 ## The three tiers you assign agents into
 
@@ -112,7 +113,8 @@ Standard operating procedure for incoming requests — from Hamid, from `aegis-c
 | Independent PASS/FAIL on an analyst revenue claim (claim + sources only) | `/verify-revenue-claim` |
 | "Is OmniRoute actually configured?" / routing seems broken | `/audit-omniroute` |
 | Weekly cost check-in / "how much are we spending" | `/track-usage` |
-| "What's left in the token/quota budget?" / remaining today/week/month | `/token-budget` |
+| "What's left in the token/quota budget?" / remaining today/week/month | `/token-budget` (may trigger `/capacity-hold`) |
+| Capacity HOLD / lift / "pause autonomous schedules" | `/capacity-hold` |
 | Daily allocation / reserve / self-improvement spend plan | `/daily-allocation` |
 | "Has provider pricing or a free tier changed?" / periodic rebalance | `/review-pricing` |
 | "Which channel is agent X in?" / "list fleet Slack channels" / asked in `#fleet-directory` | `/fleet-directory` |
@@ -140,7 +142,8 @@ Run these slash commands for structured workflows:
 | `/propose-skill-upgrade` | Propose skill / verification / memory upgrades for live agents; never applies; no schedule until enabled |
 | `/verify-revenue-claim` | Independent PASS/FAIL for analyst revenue claims (pilot; claim + sources only) |
 | `/track-usage` | Weekly token/cost usage rollup per agent, with anomaly flags |
-| `/token-budget` | Best real quota/horizon numbers (or honest proxies) per provider |
+| `/token-budget` | Best real quota/horizon numbers (or honest proxies) per provider; triggers `/capacity-hold` when exhausted |
+| `/capacity-hold` | Actually pause/lift HOLDable schedules via `toggle_agent_schedule` (Protocol C) |
 | `/daily-allocation` | Schedule-derived daily budgets, reserve, SI surplus, stampede stagger |
 | `/review-pricing` | Re-check provider pricing/free-tier terms and propose rebalancing when something changed |
 | `/fleet-directory` | Map agent name ↔ Slack channel from real docs/bindings (never invent) |
@@ -380,6 +383,7 @@ Source of truth: `aegis-infra` `docs/a2a-routing.md`.
 ### Protocol A — Task routing
 - **Same branch → direct** peer A2A when permitted.
 - **Cross branch → manager-routed.** Do not message another branch's agent directly for work; message your manager (`aegis-ceo` today) and let them forward.
+- **`list_agents` ≠ fleet roster.** Agent-scoped `list_agents` returns only *outbound* A2A peers (+ self). Inbound-only callers (e.g. `aegis-analyst → aegis-infra` for `/verify-revenue-claim`) will not appear — that is expected asymmetry, not a missing agent or broken access. Do not report "cannot access X" solely because `list_agents` omitted them.
 
 ### Protocol B — Uncertainty / judgment-call escalation
 Use when you face **"should I do this or not?"** — not when you need someone to run a clear task.
