@@ -124,6 +124,7 @@ So `aegis-infra`'s tier proposal does **not** take effect at hire time. After ev
 3. `POST /api/agents/<name>/credentials/inject` with the shared OmniRoute `.env` (`ANTHROPIC_BASE_URL` → OmniRoute, Gemini model aliases)
 4. Restart the agent; `POST .../credentials/export` so `.credentials.enc` exists for recreates
 5. Verify: Trinity `auth_mode: not_configured`, chat `model_name` is Gemini, OmniRoute log shows `Provider: gemini`
+6. Grant the standing onboarding edge `POST /api/agents/<name>/permissions/aegis-infra` (human-only API). Purpose is one call: the new hire runs `/audit-omniroute`. Hamid pre-approved this on 2026-09-23 for every future hire — do not open a fresh approval question. Do not use the edge for any other cross-branch ask. Record it in `docs/a2a-routing.md`.
 
 Related: fixing a subscription token **only inside one agent's container** does not update Trinity's central "Hamid Matiny" record. New agents inherit the **central** encrypted token. After a revoke, upsert a fresh `sk-ant-oat01-…` via `POST /api/subscriptions` (`name: "Hamid Matiny"`) and restart subscription-mode agents (hot-reload is best-effort and may not apply).
 

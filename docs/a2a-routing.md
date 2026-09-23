@@ -172,9 +172,22 @@ Hamid’s decision (2026-09-14): **keep** this edge. Capacity HOLD edges above a
 
 **Not covered by the verify exception:** reverse edge for general chat, any other Finance→\* edge, or expanding verify into ad-hoc cross-branch work. Those stay manager-routed. (Reverse `aegis-infra` → `aegis-analyst` **is** granted under Protocol C for schedule HOLD/lift only.)
 
+## Standing onboarding edge — `/audit-omniroute` only (Hamid, 2026-09-23)
+
+**Problem:** `aegis-data-quality` stopped mid-onboarding because `chat_with_agent` to `aegis-infra` `/audit-omniroute` returned Unauthorized. The OmniRoute API key was already present. The missing piece was the A2A edge. Asking Hamid again for every hire repeats that stall.
+
+**Decision:** provisioning the shared OmniRoute `.env` (the existing post-create auth flip) **and** granting `<new-hire> → aegis-infra` is a standard onboarding step. It does not need a fresh Hamid approval. The edge is narrow: the new hire may call `/audit-omniroute` only. Every other cross-branch ask stays manager-routed under Protocol A.
+
+| Edge | Purpose | Status |
+|------|---------|--------|
+| `aegis-data-quality` → `aegis-infra` | Onboarding `/audit-omniroute` | **Granted** 2026-09-23 |
+| each future hire → `aegis-infra` | Same, granted during the OmniRoute flip | **Required at hire** — not a new approval |
+
+Trinity `grant_default_permissions` stays a no-op. This is a fleet hire step, not a platform-wide auto-grant.
+
 ## Checklist before proposing any new A2A permission
 
 1. Read this table (and re-pull `permissions-edges` if older than a day).
 2. Same branch? → peer grant both directions is OK.
-3. Cross branch? → refuse direct grant; route via the `manager` column for the requester's branch (today: always `aegis-ceo`).
+3. Cross branch? → refuse direct grant; route via the `manager` column for the requester's branch (today: always `aegis-ceo`). The standing `/audit-omniroute` hire edge above is the exception and is granted during onboarding, not proposed case by case.
 4. New department head hired? → update this table's manager cell first, then adjust edges.
