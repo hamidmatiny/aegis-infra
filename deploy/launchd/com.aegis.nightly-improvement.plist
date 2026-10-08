@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Nightly improvement runner. Copy to ~/Library/LaunchAgents/ and `launchctl load` it.
+     Every 15 min; the script decides by UTC time what (if anything) to do.
+     Claude subscription via the host's claude.ai login. No ANTHROPIC_API_KEY. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.aegis.nightly-improvement</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>/Users/hamidrezamatiny/Cursor/aegis-infra/scripts/nightly_runner.py</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/hamidrezamatiny/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>HOME</key>
+    <string>/Users/hamidrezamatiny</string>
+  </dict>
+  <key>StartInterval</key>
+  <integer>900</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/hamidrezamatiny/Library/Logs/aegis-nightly/runner.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/hamidrezamatiny/Library/Logs/aegis-nightly/runner.log</string>
+</dict>
+</plist>
