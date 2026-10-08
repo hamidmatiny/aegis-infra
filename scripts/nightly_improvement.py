@@ -70,12 +70,9 @@ def decide(
     failures: list[str],
     subscription_limited: bool,
     priority_running: bool,
-    directed: bool = False,
 ) -> dict:
-    """directed=True is a Cursor session Hamid is driving. It does not spend the Claude window."""
+    """Claude subscription only. Cursor is at its monthly limit; add it back after Hamid confirms the reset."""
     batch = select_batch(failures)
-    if directed:
-        return {"run": True, "capacity": "cursor-directed", "batch": batch, "reason": "Hamid is driving this session"}
     if in_working_hours(hour, minute) or not in_idle_window(hour, minute):
         return {"run": False, "capacity": "claude-subscription", "batch": [], "reason": "outside the idle window"}
     if subscription_limited:

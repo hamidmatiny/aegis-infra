@@ -46,10 +46,9 @@ class NightlyImprovementTest(unittest.TestCase):
         self.assertEqual(idle["capacity"], "claude-subscription")
         self.assertEqual(idle["batch"][0], "aegis-analyst")
 
-    def test_directed_session_does_not_claim_the_claude_window(self):
-        now = ni.decide(20, 2, failures=FAILURES, subscription_limited=False, priority_running=True, directed=True)
-        self.assertTrue(now["run"])
-        self.assertEqual(now["capacity"], "cursor-directed")
+    def test_no_cursor_capacity_path(self):
+        with self.assertRaises(TypeError):
+            ni.decide(20, 2, failures=FAILURES, subscription_limited=False, priority_running=True, directed=True)
 
 
 if __name__ == "__main__":
