@@ -65,6 +65,16 @@ si_budget      = max(0, fair_share_of_provider_ceiling - allocatable)
 
 Interpret `si_budget`: surplus beyond task needs + reserve **must** go to self-improvement when > 0. If ceiling is tight and si_budget is 0, say so — no fake SI mandate that would burn the reserve.
 
+**Cool-pool floor (2026-10-08).** If today's OmniRoute `call_logs` show fewer than 40 responses in {429, 503, 504} and no capacity hold is active, set `si_budget` to at least 1 for **one** free-pool agent: the next unfired SI window from the live roster. Every other agent's `si_budget` stays 0 that day. This is one bounded run, not a surplus for the whole fleet. If the error count is 40 or higher, the floor is 0 and SI stays deferred.
+
+**Who owns whether improvement runs (Hamid, 2026-10-08).** `aegis-infra` is accountable for whether a self-improvement slot runs. The duties are:
+
+1. Set the one-slot cool-pool SI budget (the floor above). While a capacity hold is active, the floor is 0 and SI schedules stay disarmed. Paid headroom is separate: one nightly batch on the Claude subscription, sized to the measured idle window, covering several agents. That batch does not run during Hamid's working hours, stops on a session-limit signal, and yields to aegis-ceo and aegis-redteam.
+2. Keep the existing SI schedules armed when the hold is lifted by the normal lift rule. Do not force-lift to make a slot run.
+3. Report each week which agent got the slot and which agents still have no SI schedule.
+
+`aegis-scout` still chooses what to learn from the live roster. `aegis-ceo` still approves or rejects the skill change. `the-brain` still records levels. This duty is not a hire and not a new authority over credentials, tiers, or Track A.
+
 ### Step 3: Assign self-improvement (when surplus exists)
 
 - Pick one skill improvement candidate (prefer open gaps from `memory/skill-proposals.md`).
