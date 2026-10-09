@@ -1,4 +1,11 @@
-# Token budget log
+---
+name: token-budget-log
+description: Weekly usage/cost figures per agent, with sources cited — the working memory /track-usage reads and appends to
+metadata:
+  type: reference
+---
+
+# Token Budget Log
 
 Append-only. Source: OmniRoute `~/.omniroute/storage.sqlite` `call_logs` unless noted. Never invent remaining balances.
 
@@ -28,3 +35,23 @@ OmniRoute tables `provider_quota_state`, `api_key_token_limits`, `api_key_token_
 - **Remaining this week / month:** **not queryable** for any fleet provider — no weekly/monthly balance API. Show rolling consumption only.
 
 Proxy ceilings used when needed (label as proxy, not project-certified): Flash ≈ 20 RPD / 5 RPM; Flash-Lite ≈ 500 RPD / 15 RPM (community measurement 2026-09-02; Google: check AI Studio).
+
+### Today (2026-09-22 UTC) — real call_logs
+- Total calls: 190 · tokens_in ≈ 6.56M · tokens_out ≈ 28.5k · **429s: 18**
+- Shared key name on errors: `aegis-infra-runtime` (18 429s)
+- Gemini `gemini-2.0-flash-lite`: 25 calls, 6 errors (429)
+- Gemini `gemini-3.7-flash`: 5 calls, 1 error (429)
+- Gemini `gemini-flash-latest`: 5 calls, 1 error (429)
+- Gemini `gemini-flash-lite-latest`: 42 calls, 9 errors (429)
+- Capacity HOLD check: 18 429s is below the apply threshold (≥100); status remains `inactive`.
+
+### Today (2026-09-23 UTC) — real call_logs
+- Total calls: 242 · **429s: 50**
+- Shared key name on errors: `aegis-infra-runtime` (most errors)
+- Breakdown of 429s: 12×gemini-flash-lite-latest, 10×gemini-2.0-flash-lite, 7×gemini-3.6-flash, 5×gemini-flash-latest, etc.
+- Capacity HOLD check: 50 429s is below the apply threshold (≥100); status remains `inactive`.
+
+### Today (2026-10-08 UTC) — real call_logs
+- **FAILURE**: OmniRoute SQLite `~/.omniroute/storage.sqlite` is malformed.
+- Capacity HOLD check: Cannot check 429s (DB inaccessible); status remains last known.
+

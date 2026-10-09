@@ -23,3 +23,32 @@ Schedule-derived task / reserve / SI budgets. Written by `/daily-allocation`.
 
 The 2026-09-16 table above covers **7 agents only**. Live fleet is **15+** (`list_agents`: includes scout, product-eng, 5 PE ICs, redteam). Skills that assign SI/HOLD **must** regenerate from live `list_agents` each run — do not copy this table forward. Next `/daily-allocation` must list every non-system agent or mark N/A with reason.
 
+
+**Stampede rule today:** max 1 free-pool SI in flight fleet-wide; windows strictly staggered from 15:00 UTC to 19:00 UTC.
+
+## 2026-10-08 (cool-pool floor — one SI slot)
+
+OmniRoute `call_logs` for this UTC day, read before re-enabling schedules: 196×200, 0×429, 1×504. That is under the 40-error floor. No capacity hold is active. Arithmetic surplus is still 0 after task needs and the 20% reserve, so the cool-pool floor applies: **one** free-pool SI slot, not a fleet-wide surplus.
+
+| Agent | si_budget today | Why |
+|-------|-----------------|-----|
+| aegis-analyst | 1 | Next unfired SI window is 17:00 UTC. This is the one slot. |
+| aegis-infra, aegis-threat-intel | 0 | 15:00 and 16:00 windows already passed today. |
+| aegis-data-quality, aegis-growth | 0 | Later windows stay off so only one SI runs. |
+| aegis-ceo, aegis-redteam | 0 | Subscription agents. Not on the free-pool SI key. |
+| aegis-core-infra, aegis-scout, aegis-product-eng, aegis-gateway, aegis-policy-engine, aegis-model-router, aegis-agent-gate, aegis-audit, the-brain | 0 | No SI schedule row exists. Not assigned a slot today. |
+
+## 2026-10-09 (capacity constrained — SI deferred)
+
+**reserve_pct:** 20%  
+**Provider ceiling note:** OmniRoute `call_logs` for this UTC day show 530 errors in {429, 503, 504} (>= 40 threshold). Free-pool capacity is constrained; reserve is held at 20%; self-improvement (SI) is **DEFERRED** (si_budget: 0 fleet-wide).
+
+| Agent | Tier | Enabled core schedules (UTC) | Task budget basis | Reserve (20%) | SI budget | Notes |
+|-------|------|------------------------------|-------------------|---------------|-----------|-------|
+| aegis-ceo | premium | Daily trajectory `0 8 * * *` | 1 daily review slot | n/a (sub) | deferred | Judged by Hamid |
+| aegis-infra | free | usage Mon 08:00 | core infra jobs | 20% | 0 | SI deferred |
+| aegis-threat-intel | free | Threat scan | 1× `/scan-threats` | 20% | 0 | SI deferred |
+| aegis-analyst | free | Daily revenue `0 13 * * *` | 1× `/check-revenue` | 20% | 0 | SI deferred |
+| aegis-core-infra | mid | Daily infra diff `0 7 * * *` | 1× `/review-infra-diff` | 20% | 0 | Mid-cost path |
+| aegis-data-quality | free | Fleet output review | 1× `/review-fleet-outputs` | 20% | 0 | SI deferred |
+| aegis-growth | free | Daily growth `0 14 * * *` | check-growth | 20% | 0 | SI deferred |

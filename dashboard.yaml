@@ -1,6 +1,6 @@
 title: "AEGIS Infra"
 refresh: 300
-updated: "2026-09-17T23:20:00Z"
+updated: "2026-10-09T12:20:00Z"
 
 sections:
   - title: "Status"
@@ -13,9 +13,9 @@ sections:
         color: green
       - type: status
         label: "OmniRoute"
-        value: "Live"
-        color: yellow
-        description: "Reachable on :20129; 503 admission/capacity under concurrent free-pool load"
+        value: "Unreachable"
+        color: red
+        description: "Health endpoint /health returned HTML, not expected JSON; check configuration"
       - type: metric
         label: "Own Tier"
         value: "free-pool"
@@ -27,16 +27,16 @@ sections:
     widgets:
       - type: metric
         label: "Agents Tracked"
-        value: "15"
-        description: "Personal fleet excl. trinity-system — verified GET /api/agents 2026-09-17"
+        value: "16"
+        description: "agent_ownership non-system deleted_at null. Not list_agents (that view is outbound peers only)."
       - type: metric
         label: "Anomalies This Week"
-        value: "—"
-        description: "Updated by /track-usage"
+        value: "1"
+        description: "aegis-growth tier assignment pending (Updated by /track-usage)"
       - type: metric
         label: "Pricing Checks Overdue"
-        value: "—"
-        description: "Updated by /review-pricing"
+        value: "26 days"
+        description: "Review due every 14 days; overdue since 2026-09-27"
 
   - title: "Tier Distribution"
     layout: list
@@ -44,7 +44,7 @@ sections:
       - type: table
         title: "Agents by Tier"
         columns: ["Tier", "Count"]
-        rows: [["Premium", "1"], ["Mid-cost", "4"], ["Free-pool", "10"]]
+        rows: [["Premium", "1"], ["Mid-cost", "4"], ["Free-pool", "10"], ["Pending", "1"]]
       - type: table
         title: "Roster"
         columns: ["Agent", "Tier"]
@@ -58,12 +58,13 @@ sections:
           - ["aegis-threat-intel", "Free-pool"]
           - ["aegis-analyst", "Free-pool"]
           - ["aegis-data-quality", "Free-pool"]
-          - ["aegis-growth", "Free-pool"]
+          - ["aegis-growth", "Pending"]
           - ["aegis-gateway", "Free-pool"]
           - ["aegis-policy-engine", "Free-pool"]
           - ["aegis-model-router", "Free-pool"]
           - ["aegis-agent-gate", "Free-pool"]
           - ["aegis-audit", "Free-pool"]
+          - ["aegis-redteam", "Pending"]
 
   - title: "Recent Activity"
     layout: list
@@ -71,7 +72,8 @@ sections:
       - type: list
         title: "Recent Rollups & Reviews"
         items:
-          - "Agents Tracked 8→15 (Phase 1 SE I + PE manager + scout) — 2026-09-17"
+          - "Agents Tracked is 16 from agent_ownership via memory/fleet-roster.json — 2026-10-09"
+          - "OmniRoute /health returned HTML (check config) — 2026-10-09"
           - "SI still deferred (2026-09-15 stampede; daily-allocation cancelled 2026-09-16)"
         max_items: 5
 
