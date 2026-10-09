@@ -69,11 +69,11 @@ Per-agent `ANTHROPIC_MODEL` still selects which mid *lane name* the agent reques
 | `the-brain` | Free (was mid/Pro) | `aegis-mid-ds` | 2026-09-22: Pro has no free tier. Primary `gemini-3.1-flash-lite` |
 | `aegis-core-infra` | Free (was mid/Pro) | `aegis-mid-oss` | Primary `gemini-3.5-flash-lite` |
 | `aegis-product-eng` | Free (was mid/Pro) | `aegis-mid` | Split off `aegis-mid-oss` so it does not share core-infra's primary |
-| `aegis-scout` | Mid (temp free) | `aegis-free-latest` | Mid Pro path still fragile for long prompts; free lane until restore |
+| `aegis-scout` | Mid (temp free) | `aegis-free-37` | Moved off `aegis-free-latest` 2026-10-09 (see change log) |
 | `aegis-infra` | Free | `aegis-free-lite` | Bookkeeping; lightest primary |
 | `aegis-threat-intel` | Free | `aegis-free-20` | High-volume polling on 2.0 primary |
 | `aegis-analyst` | Free | `aegis-free-36` | Structured reads on 3.6 primary |
-| `aegis-data-quality` | Free | `aegis-free-latest` | Split from analyst |
+| `aegis-data-quality` | Free | `aegis-free-36` | Moved off `aegis-free-latest` 2026-10-09 (see change log) |
 | `aegis-growth` | Free | `aegis-free-37` | Own lane; falls back when 3.7 cools |
 | `aegis-ceo` | Premium | (subscription) | Out of OmniRoute pools |
 
@@ -119,3 +119,4 @@ Later parallel run showed more fallback onto 2.0 when lite/3.6 were stressed —
 - 2026-09-23: Every combo config now sets `maxGlobalAttempts` to that combo's hop count, `maxRetries` 0, `maxSetRetries` 0 (one upstream call per hop, no second walk). Settings `modelLockout` is enabled for 429/502/503/504 with exponential cooldown (base 5s, doubles, cap 120s). A 429 that includes Google's "retry in Xs" uses that hint when it is longer than the base. Same-request fallback to the next model stays immediate.
 - 2026-09-23 later: `aegis-free-37` (growth) and `aegis-free-lite` (infra) already had three hops, all in the hot set that was 429/503/504 together from 14:00Z to 15:30Z (`3.7-flash`, `flash-lite-latest`, `2.0-flash-lite`, `flash-latest`). Both chains now also fall through to `gemini-3.5-flash-lite` and `gemini-3.1-flash-lite`, in opposite order, with `maxGlobalAttempts` 4. Primaries unchanged. A live probe at 15:55Z used the new hops and still returned 502, because those models were 503/504/429 at that moment too. This is a fallback for a partial cooldown, not new quota.
 - 2026-09-22: `aegis-mid-oss` / `aegis-mid-ds` were not spare free quota. They were `gemini-3.1-pro-preview` only (pricing page: free tier not available; call log 143×429, 0×200 since Sept 16). Replaced those two plus `aegis-mid` with free Flash-Lite chains that returned HTTP 200 the same day. `aegis-product-eng` moved from `aegis-mid-oss` to `aegis-mid`. Shared `claude-sonnet-4-6` alias chain kept its three hot hops and gained `gemini-3.5-flash-lite` then `gemini-3.1-flash-lite` as further 429 fallbacks. No paid key. `sonnet` and `aegis-mid-pro` left on Pro and unused.
+- 2026-10-09 13:05Z: `aegis-data-quality` -> `aegis-free-36`, `aegis-scout` -> `aegis-free-37` (Hamid chose this in the 2026-10-09 operator session). `aegis-free-latest`'s primary `gemini-flash-latest` hung to the 300 s client abort (HTTP 499) on most calls since 2026-10-08 (2026-10-09 00:00-13:00Z: 12 OK, 17 aborted, 16 errors of 45), and the hang never reaches the fallback hops. Neither agent had a strict close-out on record. Applied in `.env` (`ANTHROPIC_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL`) plus Trinity `credentials/export` (HTTP 200 each). Revert: restore `.tmp/env.before-lane-move-20261009` in each container and export again.
