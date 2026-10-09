@@ -4,11 +4,11 @@ Written by `/capacity-hold`. Tracks which schedules `aegis-infra` actually pause
 
 ## Current status
 
-**status:** `inactive` (no fleet HOLD in force)  
+**status:** `active` (fleet HOLD in force due to 1315 429s today)  
 **authority:** `aegis-infra` (Protocol C — standing exception)  
 **last_proof:** 2026-09-20T00:21Z — full apply→verify→lift on the schedules named in the 2026-09-18 advisory HOLD
 
-Today’s early UTC window had only ~21×429 (below apply threshold ≥100). Mechanism is live; next `/token-budget` that meets threshold will `apply` for real and leave schedules paused until lift criteria pass.
+Today’s UTC window recorded **1315 × 429 errors** (exceeding apply threshold ≥100). All HOLDable schedules across the fleet were verified already disabled (`enabled: false`), so 0 new schedules were paused. Core safety schedules (`Daily allocation`, `Daily token budget`) remain active.
 
 ## Proof (round-trip — real Trinity toggles)
 
@@ -24,7 +24,7 @@ Tool: `mcp__trinity__toggle_agent_schedule`. A2A edges `aegis-infra` → HOLD ta
 
 ## Paused under active HOLD
 
-*(empty — last proof lifted)*
+*(all HOLDable schedules verified `enabled: false` across fleet; 0 newly toggled)*
 
 ## History
 
@@ -32,3 +32,4 @@ Tool: `mcp__trinity__toggle_agent_schedule`. A2A edges `aegis-infra` → HOLD ta
 |------|--------|-------|
 | 2026-09-18 | Advisory Slack HOLD only | **No toggles** — schedules kept firing |
 | 2026-09-20 | Protocol C + `/capacity-hold` + permission grants + proof apply/lift | Real teeth; fleet left **unpaused** (429s below apply threshold at proof time) |
+| 2026-09-25 | `/capacity-hold apply` triggered by 1315 × 429s | HOLD activated; all HOLDable schedules already verified `enabled: false` |
