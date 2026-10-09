@@ -17,9 +17,10 @@ class NightlyRunnerTest(unittest.TestCase):
     def test_steps_follow_the_clock(self):
         self.assertEqual(nr.pick_step(at(2, 30)), "run")
         self.assertEqual(nr.pick_step(at(6, 0)), "run")
-        self.assertEqual(nr.pick_step(at(8, 45)), "review")
-        self.assertEqual(nr.pick_step(at(9, 40)), "deploy")
-        self.assertEqual(nr.pick_step(at(10, 15)), "summary")
+        # 2026-10-09 the Mac woke at 11:01Z; the review must still happen then.
+        self.assertEqual(nr.pick_step(at(8, 45)), "morning")
+        self.assertEqual(nr.pick_step(at(11, 1)), "morning")
+        self.assertEqual(nr.pick_step(at(7, 20)), "morning")
         self.assertEqual(nr.pick_step(at(14, 0)), "verify")
         self.assertEqual(nr.pick_step(at(4, 0)), "verify")
 
@@ -58,6 +59,74 @@ class NightlyRunnerTest(unittest.TestCase):
         source = Path(nr.__file__).read_text()
         self.assertNotIn("cursor-agent", source)
         self.assertNotIn("CURSOR_API_KEY", source)
+
+
+class NightlyHardeningTest(unittest.TestCase):
+    def setUp(self):
+        import subprocess
+        import tempfile
+        self.tmp = tempfile.TemporaryDirectory()
+        self.repo = Path(self.tmp.name) / "agent"
+        self.repo.mkdir()
+        run = lambda *a: subprocess.run(a, cwd=self.repo, check=True, capture_output=True)
+        self.git = run
+        run("git", "init", "-q")
+        (self.repo / ".claude/skills/check").mkdir(parents=True)
+        (self.repo / ".claude/skills/check/SKILL.md").write_text("old\n")
+        run("git", "add", "-A")
+        run("git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "base")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_staged_skill_is_moved_into_claude_skills(self):
+        (self.repo / "skill-staging/check").mkdir(parents=True)
+        (self.repo / "skill-staging/check/SKILL.md").write_text("new\n")
+        self.git("git", "add", "-A")
+        self.git("git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "session")
+        moved = nr.promote_staged_skills(self.repo)
+        self.assertEqual(moved, [".claude/skills/check/SKILL.md"])
+        self.assertEqual((self.repo / ".claude/skills/check/SKILL.md").read_text(), "new\n")
+        self.assertFalse((self.repo / "skill-staging").exists())
+        files, _ = nr.changed_files(self.repo, "HEAD~1")
+        self.assertEqual(files, [".claude/skills/check/SKILL.md"])
+        self.assertEqual(nr.outside_scope(files), [])
+
+    def test_no_staging_is_a_no_op(self):
+        self.assertEqual(nr.promote_staged_skills(self.repo), [])
+
+    def test_discovery_error_is_not_before_evidence(self):
+        # aegis-analyst PR #1's "fails on base" was this harness error, not a failing test.
+        self.assertTrue(nr.HARNESS_ERROR.search("ImportError: Start directory is not importable: '/x/tests'"))
+        self.assertFalse(nr.HARNESS_ERROR.search("FAILED (failures=1)"))
+
+    def test_parallel_drops_to_one_after_a_limit(self):
+        with mock.patch.object(nr, "load_json", return_value={}):
+            self.assertEqual(nr.parallel_now(at(2, 0)), 2)
+        with mock.patch.object(nr, "load_json", return_value={"seen": "2026-10-09T00:30:00Z"}):
+            self.assertEqual(nr.parallel_now(at(2, 0)), 1)
+        with mock.patch.object(nr, "load_json", return_value={"seen": "2026-10-07T00:30:00Z"}):
+            self.assertEqual(nr.parallel_now(at(2, 0)), 2)
+
+    def test_review_picks_up_an_earlier_night(self):
+        state = {"days": {}, "entries": [
+            {"agent": "aegis-analyst", "night": "2026-10-08", "status": "proposed", "pr": "u1"},
+            {"agent": "aegis-growth", "night": "2026-10-09", "status": "proposed", "pr": "u2", "review_sent": {"at": "x"}},
+        ]}
+        sent = {}
+        def fake_api(method, path, body=None):
+            sent["message"] = body["message"]
+            return 200, {"execution_id": "e1"}
+        with mock.patch.object(nr, "ledger", return_value=state), \
+             mock.patch.object(nr, "priority_busy", return_value=(False, "")), \
+             mock.patch.object(nr, "trinity_db", return_value=[]), \
+             mock.patch.object(nr, "trinity_api", side_effect=fake_api), \
+             mock.patch.object(nr, "save_json"):
+            out = nr.step_review(at(11, 1), dry=False)
+        self.assertIn("sent aegis-ceo 1 PRs", out)
+        self.assertIn("u1", sent["message"])
+        self.assertNotIn("u2", sent["message"])
+        self.assertEqual(state["entries"][0]["review_sent"]["execution"], "e1")
 
 
 if __name__ == "__main__":

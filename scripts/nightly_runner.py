@@ -3,11 +3,18 @@
 
 Each tick does at most one step, chosen by UTC time:
 
-  run      02:00-03:30, 05:15-07:15  improve the next agent in tonight's batch
-  review   08:40-09:30               aegis-ceo merges or closes tonight's PRs
-  deploy   after review              merged changes pulled into the agent container
-  summary  10:00 onward, once a day  one post in #aegis-infra
+  run      02:00-03:30, 05:15-07:15  improve the next agents in tonight's batch (2 at once with headroom)
+  morning  07:15-12:00               aegis-ceo reviews every unreviewed PR (any night), merged
+                                     changes are deployed and recorded in the-brain's fleet-kg,
+                                     then one summary post in #aegis-infra from 10:00
   verify   every tick                next real scheduled run vs the 3 before; revert if worse
+
+The Mac sleeps with the lid closed on battery, and launchd only ticks while it
+is awake. On 2026-10-09 one session started in a 2 s dark wake at 02:32Z and
+crept forward in 2-5 s maintenance wakes until 11:01Z, so 1 of 6 agents was
+attempted and the 08:40-09:30 review window was missed. Review now runs at any
+morning tick, sessions record how long they were suspended, and the summary
+counts idle-window ticks seen versus expected.
 
 Capacity is the Claude subscription only, through the host's claude.ai login.
 ANTHROPIC_API_KEY and friends are stripped from the child environment so a
@@ -29,8 +36,11 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
+import time
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -49,6 +59,11 @@ TRINITY = os.environ.get("TRINITY_URL", "http://127.0.0.1:8000")
 INFRA_SLACK_CHANNEL = "C0C1FN1US4E"  # #aegis-infra, bound to aegis-infra
 PRIORITY = ("aegis-ceo", "aegis-redteam")
 ALLOWED_PREFIXES = (".claude/skills/", "scripts/", "tests/")
+# Claude Code refuses writes under .claude/ in -p sessions even with explicit allow rules
+# (tested 2026-10-09). Sessions write skills here; the runner moves them into .claude/skills/.
+STAGING = "skill-staging/"
+PARALLEL = 2  # sessions at once when no usage-limit signal in the last 24 h
+EXPECTED_TICKS = 14  # 15-minute ticks inside the two idle windows (210 min)
 MAX_CHANGED_LINES = 400
 SESSION_TIMEOUT_S = 25 * 60
 PRIORITY_LEAD = timedelta(minutes=30)
@@ -219,22 +234,90 @@ def next_fire(cron: str, start: datetime, within: timedelta) -> datetime | None:
     return None
 
 
+OMNIROUTE_DB = Path(os.environ.get("OMNIROUTE_SQLITE", Path.home() / ".omniroute" / "storage.sqlite"))
+UPSTREAM_EXCLUDED: list[dict] = []  # failed runs the-brain classified upstream_5xx on the last call
+
+
+def call_log_events(lo: str, hi: str) -> list[list]:
+    """[timestamp, status] rows from OmniRoute call_logs between lo and hi (UTC ISO)."""
+    import sqlite3
+
+    if not OMNIROUTE_DB.exists():
+        return []
+    con = sqlite3.connect(f"file:{OMNIROUTE_DB}?mode=ro", uri=True)
+    try:
+        return [list(r) for r in con.execute(
+            "select timestamp, status from call_logs where timestamp >= ? and timestamp <= ? order by timestamp",
+            (lo[:19], hi[:19]),
+        )]
+    finally:
+        con.close()
+
+
+def classify_upstream(rows: list[dict]) -> dict[str, dict]:
+    """Run failed executions through the-brain's run lifecycle with the 5xx signal from call_logs.
+
+    Returns {execution_id: {"cause", "count_5xx", "share_5xx"}}. Empty on any error: a missing
+    classification must not stop the run step.
+    """
+    failed = [r for r in rows if r["status"] not in ("success", "running")]
+    if not failed:
+        return {}
+    lo = min(r["started_at"] for r in failed)
+    hi = max((r.get("completed_at") or r["started_at"]) for r in failed)
+    lo_dt = datetime.strptime(lo[:19], "%Y-%m-%dT%H:%M:%S") - timedelta(minutes=5)
+    hi_dt = datetime.strptime(hi[:19], "%Y-%m-%dT%H:%M:%S") + timedelta(minutes=5)
+    payload = {
+        "executions": [{
+            "execution_id": r["id"], "agent": r["agent_name"], "status": r["status"], "error": r["err"],
+            "started_at": r["started_at"], "completed_at": r.get("completed_at") or r["started_at"],
+            "real_closeout": bool(r["strict_closeout"]), "work_finished": False,
+        } for r in failed],
+        "call_logs": call_log_events(lo_dt.strftime("%Y-%m-%dT%H:%M:%S"), hi_dt.strftime("%Y-%m-%dT%H:%M:%S")),
+    }
+    try:
+        proc = subprocess.run(
+            ["docker", "exec", "-i", "-w", "/home/developer", "agent-the-brain", "python3",
+             "resources/fleet-kg/pipelines/upstream_signal.py", "--store", "memory/fleet-kg.sqlite"],
+            input=json.dumps(payload), capture_output=True, text=True, timeout=120,
+        )
+        if proc.returncode != 0:
+            log(f"upstream classify failed: {proc.stderr.strip()[-200:]}")
+            return {}
+        return {row["execution_id"]: row for row in json.loads(proc.stdout)}
+    except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
+        log(f"upstream classify failed: {exc}")
+        return {}
+
+
 def recent_failures(at: datetime) -> dict[str, list[dict]]:
-    """Last 24h of real runs per agent that failed, timed out, or missed the strict close-out."""
+    """Last 24h of real runs per agent that failed, timed out, or missed the strict close-out.
+
+    Runs the-brain classifies as upstream_5xx (a provider outage during the run) are not the
+    agent's fault and are left out; they are kept in UPSTREAM_EXCLUDED for the summary.
+    """
     rows = trinity_db(
-        "select agent_name, id, status, started_at, triggered_by, slack_closeout_status, "
+        "select agent_name, id, status, started_at, completed_at, triggered_by, slack_closeout_status, "
         "substr(coalesce(error,''),1,200) err, "
         "instr(coalesce(execution_log,''), ?) > 0 strict_closeout "
         "from schedule_executions where started_at >= ? order by started_at",
         (STRICT_CLOSEOUT, iso(at - timedelta(hours=24))),
     )
+    rows = [r for r in rows if r["agent_name"] in ni.FLEET]
+    causes = classify_upstream(rows)
+    UPSTREAM_EXCLUDED.clear()
     out: dict[str, list[dict]] = {}
     for r in rows:
-        if r["agent_name"] not in ni.FLEET:
-            continue
         bad = r["status"] != "success" or not r["strict_closeout"]
-        if bad and r["status"] != "running":
-            out.setdefault(r["agent_name"], []).append(r)
+        if not bad or r["status"] == "running":
+            continue
+        cause = causes.get(r["id"], {}).get("cause")
+        r["cause"] = cause
+        if cause == "upstream_5xx":
+            UPSTREAM_EXCLUDED.append({"agent": r["agent_name"], "id": r["id"], **{
+                k: causes[r["id"]].get(k) for k in ("count_5xx", "share_5xx")}})
+            continue
+        out.setdefault(r["agent_name"], []).append(r)
     return out
 
 
@@ -251,7 +334,15 @@ def scout_pick(agent: str) -> str:
     return blocks[-1][:1500] if blocks else ""
 
 
+_CLONE_LOCK = threading.Lock()
+
+
 def clone(agent: str) -> Path | None:
+    with _CLONE_LOCK:  # two parallel sessions both read aegis-scout's clone
+        return _clone(agent)
+
+
+def _clone(agent: str) -> Path | None:
     dest = WORK / agent
     if (dest / ".git").exists():
         ok = sh(["git", "fetch", "-q", "origin"], cwd=dest).returncode == 0
@@ -287,6 +378,9 @@ if neither exists, the agent's slowest or most token-heavy repetitive step). Goo
 
 Hard rules:
 - Change only files under .claude/skills/, scripts/, tests/. Nothing else. Never touch CLAUDE.md, .env, .mcp.json.
+- Writes under .claude/ are blocked in this session. To change or add a skill, write the complete new file to
+  skill-staging/<skill-name>/SKILL.md (the same path it has under .claude/skills/) and commit it there.
+  The runner moves skill-staging/ into .claude/skills/ before the tests run and before the PR.
 - Keep the change small (under {max_lines} changed lines).
 - Write a test in tests/test_*.py that the command `python3 -m unittest discover -s tests -t .` runs.
   The test must fail on the code before your change and pass after it. Make it import the code it tests
@@ -310,18 +404,49 @@ def run_tests(repo: Path) -> tuple[bool, str]:
 
 
 def before_after(repo: Path, base: str, test_files: list[str]) -> dict:
-    """Run the new tests against the base code (expect fail) and the branch (expect pass)."""
+    """Run the new tests against the base code (expect fail) and the branch (expect pass).
+
+    Every changed file under tests/ goes into the base worktree, not only test_*.py: a
+    new tests/__init__.py left out made discovery fail with "Start directory is not
+    importable", which is a harness error, not the base code failing the test.
+    """
     after_ok, after_out = run_tests(repo)
-    tmp = WORK / "_before"
+    tmp = WORK / f"_before-{repo.name}"
     shutil.rmtree(tmp, ignore_errors=True)
     sh(["git", "worktree", "prune"], cwd=repo)
     sh(["git", "worktree", "add", "-q", "--detach", str(tmp), base], cwd=repo)
     for f in test_files:
+        if not (repo / f).is_file():
+            continue
         (tmp / f).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(repo / f, tmp / f)
     before_ok, before_out = run_tests(tmp)
     sh(["git", "worktree", "remove", "--force", str(tmp)], cwd=repo)
-    return {"before_pass": before_ok, "before": before_out, "after_pass": after_ok, "after": after_out}
+    harness_error = HARNESS_ERROR.search(before_out) is not None
+    return {"before_pass": before_ok, "before": before_out, "after_pass": after_ok, "after": after_out,
+            "before_harness_error": harness_error}
+
+
+HARNESS_ERROR = re.compile(r"Start directory is not importable|No module named 'tests'")
+
+
+def promote_staged_skills(repo: Path) -> list[str]:
+    """Move committed skill-staging/** into .claude/skills/** and amend the session's commit."""
+    staged = [f for f in sh(["git", "ls-files", STAGING], cwd=repo).stdout.split() if f.startswith(STAGING)]
+    if not staged:
+        return []
+    moved = []
+    for f in staged:
+        dest = repo / ".claude/skills" / f[len(STAGING):]
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(repo / f, dest)
+        moved.append(str(dest.relative_to(repo)))
+    sh(["git", "rm", "-q", "-r", "--cached", STAGING], cwd=repo)
+    shutil.rmtree(repo / STAGING, ignore_errors=True)
+    sh(["git", "add", "--", *moved], cwd=repo)
+    sh(["git", "-c", "user.name=hamidmatiny", "-c", "user.email=hamidmatiny@gmail.com",
+        "commit", "-q", "--amend", "--no-edit"], cwd=repo)
+    return moved
 
 
 def changed_files(repo: Path, base: str) -> tuple[list[str], int]:
@@ -356,7 +481,7 @@ def improve(agent: str, failures: list[dict], at: datetime) -> dict:
     sh(["git", "checkout", "-q", "-B", branch], cwd=repo)
     fail_text = "\n".join(
         f"- {f['started_at']} {f['status']} trigger={f['triggered_by']} closeout={f['slack_closeout_status']} "
-        f"strict={'yes' if f['strict_closeout'] else 'no'} error={f['err'] or '-'}"
+        f"strict={'yes' if f['strict_closeout'] else 'no'} cause={f.get('cause') or '-'} error={f['err'] or '-'}"
         for f in failures[-8:]
     ) or "- none"
     pick = scout_pick(agent) or "none recorded"
@@ -372,16 +497,23 @@ def improve(agent: str, failures: list[dict], at: datetime) -> dict:
         "Bash(python3 -m unittest:*)",
         "--disallowedTools", "WebFetch", "WebSearch", "Bash(git push:*)",
     ]
+    wall0, mono0 = time.time(), time.monotonic()
     try:
         proc = sh(cmd, cwd=repo, timeout=SESSION_TIMEOUT_S, env=child_env())
         raw = proc.stdout + proc.stderr
     except subprocess.TimeoutExpired:
         return {**entry, "status": "error", "reason": f"session exceeded {SESSION_TIMEOUT_S}s"}
+    finally:
+        wall, mono = time.time() - wall0, time.monotonic() - mono0
+        entry["session_wall_min"] = round(wall / 60, 1)
+        # time.monotonic() stops while macOS sleeps; the gap is time the session was suspended.
+        entry["session_suspended_min"] = round(max(0.0, wall - mono) / 60, 1)
     result_text = raw
     try:
         payload = json.loads(proc.stdout)
         result_text = str(payload.get("result", ""))
         entry["session_id"] = payload.get("session_id")
+        entry["session_metrics"] = session_metrics(payload)
         if payload.get("is_error") and LIMIT_PATTERN.search(result_text):
             return {**entry, "status": "limit", "reason": result_text[:300]}
     except ValueError:
@@ -402,6 +534,8 @@ def improve(agent: str, failures: list[dict], at: datetime) -> dict:
     head = sh(["git", "rev-parse", "HEAD"], cwd=repo).stdout.strip()
     if head == base:
         return {**entry, "status": "no_change", "reason": verdict.get("summary") or "session made no commit"}
+    entry["promoted_skills"] = promote_staged_skills(repo)
+    head = sh(["git", "rev-parse", "HEAD"], cwd=repo).stdout.strip()
     files, lines = changed_files(repo, base)
     bad = outside_scope(files)
     if bad:
@@ -409,8 +543,11 @@ def improve(agent: str, failures: list[dict], at: datetime) -> dict:
     if lines > MAX_CHANGED_LINES:
         return {**entry, "status": "rejected", "reason": f"{lines} changed lines exceeds {MAX_CHANGED_LINES}"}
     tests = [f for f in files if f.startswith("tests/") and Path(f).name.startswith("test_")]
-    evidence = before_after(repo, base, tests)
+    evidence = before_after(repo, base, [f for f in files if f.startswith("tests/")])
     entry["evidence"] = evidence
+    if evidence.get("before_harness_error"):
+        return {**entry, "status": "rejected", "files": files,
+                "reason": "base run failed in test discovery, not in the test; no real before/after"}
     if not tests or not evidence["after_pass"] or evidence["before_pass"]:
         return {**entry, "status": "rejected",
                 "reason": "before/after test did not show fail-then-pass", "files": files}
@@ -438,10 +575,34 @@ def improve(agent: str, failures: list[dict], at: datetime) -> dict:
             "base": base, "files": files, "lines": lines}
 
 
+def session_metrics(payload: dict) -> dict:
+    """What one session cost, from claude -p --output-format json."""
+    usage = payload.get("usage") or {}
+    return {
+        "duration_api_min": round((payload.get("duration_api_ms") or 0) / 60000, 1),
+        "num_turns": payload.get("num_turns"),
+        "output_tokens": usage.get("output_tokens"),
+        "cache_read_tokens": usage.get("cache_read_input_tokens"),
+        "cache_creation_tokens": usage.get("cache_creation_input_tokens"),
+        "cost_equiv_usd": payload.get("total_cost_usd"),
+    }
+
+
+def parallel_now(at: datetime) -> int:
+    """Two sessions at once unless a usage-limit signal was seen in the last 24 h."""
+    mark = load_json(LIMIT, {})
+    seen = mark.get("seen")
+    if seen and seen > iso(at - timedelta(hours=24)):
+        return 1
+    return PARALLEL
+
+
 def step_run(at: datetime, dry: bool) -> str:
     state = ledger()
     night = night_of(at)
     day = state["days"].setdefault(night, {"batch": [], "done": []})
+    if not dry:
+        day["idle_ticks"] = day.get("idle_ticks", 0) + 1
     limited, why_limited = subscription_limited(at)
     busy, why_busy = priority_busy(at)
     failures = recent_failures(at)
@@ -462,20 +623,25 @@ def step_run(at: datetime, dry: bool) -> str:
         return f"run: skip (a session started now could run past the idle window); batch {day['batch']}"
     todo = [a for a in day["batch"] if a not in day["done"]]
     if not todo:
+        save_json(LEDGER, state) if not dry else None
         return f"run: batch done for {night}: {day['done']}"
-    agent = todo[0]
+    agents = todo[: parallel_now(at)]
     if dry:
-        return f"run: would improve {agent} now; batch {day['batch']}"
-    entry = improve(agent, failures.get(agent, []), at)
+        return f"run: would improve {agents} now; batch {day['batch']}"
+    with ThreadPoolExecutor(max_workers=len(agents)) as pool:
+        entries = list(pool.map(lambda a: improve(a, failures.get(a, []), at), agents))
     state = ledger()  # re-read in case another step wrote meanwhile
     day = state["days"].setdefault(night, day)
-    state["entries"].append(entry)
-    if entry["status"] == "limit":
-        save_json(LIMIT, {"until": iso(at + timedelta(hours=5)), "seen": iso(at), "detail": entry.get("reason", "")})
-    else:
-        day["done"].append(agent)
+    out = []
+    for agent, entry in zip(agents, entries):
+        state["entries"].append(entry)
+        if entry["status"] == "limit":
+            save_json(LIMIT, {"until": iso(at + timedelta(hours=5)), "seen": iso(at), "detail": entry.get("reason", "")})
+        else:
+            day["done"].append(agent)
+        out.append(f"{agent} -> {entry['status']} {entry.get('pr', entry.get('reason', ''))}")
     save_json(LEDGER, state)
-    return f"run: {agent} -> {entry['status']} {entry.get('pr', entry.get('reason', ''))}"
+    return "run: " + "; ".join(out)
 
 
 # ---------------------------------------------------------------- review / deploy / verify / summary
@@ -490,11 +656,10 @@ def step_review(at: datetime, dry: bool) -> str:
     state = ledger()
     night = night_of(at)
     day = state["days"].setdefault(night, {"batch": [], "done": []})
-    if day.get("review_sent"):
-        return "review: already sent"
-    proposed = [e for e in state["entries"] if e.get("night") == night and e.get("status") == "proposed"]
+    # Any night: a PR proposed while the Mac slept through its review window still gets reviewed.
+    proposed = [e for e in state["entries"] if e.get("status") == "proposed" and not e.get("review_sent")]
     if not proposed:
-        return "review: nothing proposed tonight"
+        return "review: nothing waiting for aegis-ceo"
     busy, why = priority_busy(at)
     running = trinity_db("select 1 from schedule_executions where agent_name='aegis-ceo' and status='running'")
     if running:
@@ -517,7 +682,13 @@ def step_review(at: datetime, dry: bool) -> str:
         "async_mode": True,
     })
     state = ledger()
-    state["days"].setdefault(night, day)["review_sent"] = {"at": iso(at), "http": code, "execution": body.get("execution_id")}
+    sent = {"at": iso(at), "http": code, "execution": body.get("execution_id")}
+    state["days"].setdefault(night, day)["review_sent"] = sent
+    if code == 200:
+        prs = {e["pr"] for e in proposed}
+        for e in state["entries"]:
+            if e.get("pr") in prs:
+                e["review_sent"] = sent
     save_json(LEDGER, state)
     return f"review: sent aegis-ceo {len(proposed)} PRs (HTTP {code})"
 
@@ -544,6 +715,7 @@ def step_deploy(at: datetime, dry: bool) -> str:
         code, body = trinity_api("POST", f"/api/agents/{e['agent']}/git/pull", {"strategy": "stash_reapply"})
         if code == 200:
             e.update(status="deployed", deployed_at=iso(now_utc()))
+            e["fleet_kg"] = record_in_fleet_kg(e)
             out.append(f"{e['agent']} deployed")
         else:
             e.update(deploy_error=f"HTTP {code}: {str(body)[:200]}")
@@ -551,6 +723,25 @@ def step_deploy(at: datetime, dry: bool) -> str:
     if not dry:
         save_json(LEDGER, state)
     return "deploy: " + (", ".join(out) or "nothing to do")
+
+
+def record_in_fleet_kg(entry: dict) -> str:
+    """One decision node per merged improvement in the-brain's fleet-kg (memory/fleet-kg.sqlite)."""
+    payload = {k: entry.get(k) for k in ("agent", "pr", "night", "status", "summary", "merge_commit",
+                                          "merged_at", "deployed_at", "files", "lines", "next_run",
+                                          "revert_reason") if entry.get(k) is not None}
+    payload["session_minutes"] = entry.get("session_wall_min")
+    try:
+        proc = subprocess.run(
+            ["docker", "exec", "-i", "-w", "/home/developer", "agent-the-brain", "python3",
+             "resources/fleet-kg/pipelines/record_improvement.py", "--store", "memory/fleet-kg.sqlite"],
+            input=json.dumps(payload), capture_output=True, text=True, timeout=60,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return f"error: {exc}"[:200]
+    if proc.returncode != 0:
+        return f"error: {proc.stderr.strip()[-200:]}"
+    return f"recorded {iso(now_utc())}"
 
 
 def run_ok(r: dict) -> bool:
@@ -578,6 +769,7 @@ def step_verify(at: datetime, dry: bool) -> str:
         e["next_run"] = {"id": nxt["id"], "ok": run_ok(nxt), "baseline_ok": f"{baseline_ok}/{len(before)}"}
         if run_ok(nxt) or baseline_ok == 0:
             e["status"] = "held"
+            e["fleet_kg"] = record_in_fleet_kg(e) if not dry else e.get("fleet_kg")
             out.append(f"{e['agent']} held ({nxt['id']})")
             continue
         reason = (f"next real run {nxt['id']} {nxt['status']}, strict close-out "
@@ -593,6 +785,7 @@ def step_verify(at: datetime, dry: bool) -> str:
         if ok:
             trinity_api("POST", f"/api/agents/{e['agent']}/git/pull", {"strategy": "stash_reapply"})
         e.update(status="reverted" if ok else "revert_failed", revert_reason=reason, reverted_at=iso(now_utc()))
+        e["fleet_kg"] = record_in_fleet_kg(e)
         out.append(f"{e['agent']} {'reverted' if ok else 'REVERT FAILED'}: {reason}")
     if not dry:
         save_json(LEDGER, state)
@@ -602,20 +795,34 @@ def step_verify(at: datetime, dry: bool) -> str:
 def summary_text(at: datetime) -> str:
     state = ledger()
     night = night_of(at)
+    failures = recent_failures(at)
     tonight = [e for e in state["entries"] if e.get("night") == night]
     lines = [f"Task: nightly improvement summary ({night})", "Capacity: Claude subscription only, idle windows 02:00-03:30 and 05:15-07:15 UTC"]
     improved = [e for e in tonight if e.get("status") in ("proposed", "approved", "deployed", "held")]
-    lines.append(f"Improved overnight: {len(improved)} of {len(tonight)} attempted")
+    batch = state["days"].get(night, {}).get("batch", [])
+    lines.append(f"Improved overnight: {len(improved)} of {len(tonight)} attempted (batch of {len(batch)})")
+    ticks = state["days"].get(night, {}).get("idle_ticks", 0)
+    if ticks < EXPECTED_TICKS:
+        lines.append(f"Idle-window ticks seen: {ticks} of {EXPECTED_TICKS}. The Mac was asleep for the rest "
+                     "(launchd does not tick during sleep; on battery with the lid closed it sleeps).")
+    for e in tonight:
+        m = e.get("session_metrics") or {}
+        if e.get("session_wall_min") is not None:
+            lines.append(f"- {e['agent']} session: {e['session_wall_min']} min wall, "
+                         f"{e.get('session_suspended_min', 0)} min suspended, {m.get('num_turns')} turns, "
+                         f"{m.get('output_tokens')} output tokens")
     for e in tonight:
         link = e.get("pr") or "-"
         lines.append(f"- {e['agent']}: {e['status']} {link} {e.get('summary') or e.get('reason', '')}".rstrip()[:400])
+    if UPSTREAM_EXCLUDED:
+        lines.append(f"Failed runs left out as upstream_5xx (provider outage, not the agent): {len(UPSTREAM_EXCLUDED)}")
     checked = [e for e in state["entries"] if e.get("next_run") and e.get("night") < night]
     if checked:
         lines.append("Held on real runs:")
         for e in checked[-10:]:
             lines.append(f"- {e['agent']} ({e['night']}): {e['status']} next run {e['next_run']['id']} "
                          f"{'ok' if e['next_run']['ok'] else 'not ok'}, baseline {e['next_run']['baseline_ok']}")
-    nxt = ni.select_batch(sorted(recent_failures(at)), already_done=[e["agent"] for e in improved])
+    nxt = ni.select_batch(sorted(failures, key=lambda x: -len(failures[x])), already_done=[e["agent"] for e in improved])
     lines.append("Next: " + ", ".join(nxt))
     if at.weekday() == 0:
         counts: dict[str, int] = {}
@@ -648,19 +855,15 @@ def pick_step(at: datetime) -> str:
     minutes = at.hour * 60 + at.minute
     if ni.in_idle_window(at.hour, at.minute):
         return "run"
-    if 8 * 60 + 40 <= minutes < 9 * 60 + 30:
-        return "review"
-    if 9 * 60 + 30 <= minutes < 10 * 60:
-        return "deploy"
-    if 10 * 60 <= minutes < 12 * 60:
-        return "summary"
+    if 7 * 60 + 15 <= minutes < 12 * 60:
+        return "morning"
     return "verify"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--step", choices=["run", "review", "deploy", "verify", "summary"])
+    parser.add_argument("--step", choices=["run", "morning", "review", "deploy", "verify", "summary"])
     parser.add_argument("--at", help="pretend UTC time, ISO (dry runs only)")
     args = parser.parse_args()
     at = now_utc()
@@ -678,11 +881,19 @@ def main() -> int:
         step = args.step or pick_step(at)
         try:
             msgs = []
-            if step in ("deploy", "summary"):
+            if step == "morning":
+                # Review whatever is waiting, deploy what aegis-ceo merged, summarize once from 10:00.
+                msgs.append(step_review(at, args.dry_run))
                 msgs.append(step_deploy(at, args.dry_run))
-            fn = {"run": step_run, "review": step_review, "deploy": None, "verify": step_verify, "summary": step_summary}[step]
-            if fn:
-                msgs.append(fn(at, args.dry_run))
+                if at.hour >= 10:
+                    msgs.append(step_summary(at, args.dry_run))
+            else:
+                if step in ("deploy", "summary"):
+                    msgs.append(step_deploy(at, args.dry_run))
+                fn = {"run": step_run, "review": step_review, "deploy": None, "verify": step_verify,
+                      "summary": step_summary}[step]
+                if fn:
+                    msgs.append(fn(at, args.dry_run))
             if step != "verify":
                 msgs.append(step_verify(at, args.dry_run))
         except Exception as exc:  # one bad tick must not kill the agent

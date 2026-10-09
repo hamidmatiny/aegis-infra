@@ -29,8 +29,11 @@ FLEET = (
     "the-brain",
 )
 
-# 16 agents, one improvement each within 3 nights.
-BATCH_SIZE = 6
+# 16 agents, one improvement each every 2 nights. Measured 2026-10-09: one focused session is
+# 10-15 min of real work (46 turns, ~20k output tokens on Opus). Two run at once (PARALLEL in
+# nightly_runner), so 8 fit in the 210 idle-window minutes with room for the 25-min cap.
+# After a usage-limit signal the runner drops to one at a time and the batch carries over.
+BATCH_SIZE = 8
 
 # UTC. 02:00-03:30 is between the 01:00 ADT redteam batch and Hamid's morning.
 # 05:15-07:15 is after the 04:00 UTC redteam batch and before the 07:30 CEO pulse.

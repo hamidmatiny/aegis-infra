@@ -24,15 +24,15 @@ class NightlyImprovementTest(unittest.TestCase):
         self.assertEqual(len(ni.FLEET), 16)
         self.assertEqual(len(set(ni.FLEET)), 16)
 
-    def test_failures_go_first_and_batch_is_six(self):
+    def test_failures_go_first_and_batch_is_eight(self):
         batch = ni.select_batch(FAILURES)
         self.assertEqual(batch[:2], ["aegis-analyst", "aegis-growth"])
-        self.assertEqual(len(batch), 6)
-        self.assertEqual(batch, FAILURES[:6])
+        self.assertEqual(len(batch), 8)
+        self.assertEqual(batch, FAILURES[:8])
 
-    def test_three_nights_cover_the_roster(self):
+    def test_two_nights_cover_the_roster(self):
         done = []
-        for _ in range(3):
+        for _ in range(2):
             done.extend(ni.select_batch(FAILURES, done))
         self.assertEqual(set(done), set(ni.FLEET))
 
