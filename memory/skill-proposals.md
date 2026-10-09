@@ -6,7 +6,7 @@ Running record of proposed / approved / declined skill, verification, and memory
 
 ## Proposal SU-2026-09-13-1 — Independent verification for `aegis-analyst` revenue reports (pilot)
 
-**Status:** approved (2026-09-13) by Hamid — **applied** (2026-09-13)  
+**Status:** **applied** (2026-09-13) (approval not cited: no PR URL or operator-queue response ID on record)  
 **Agent:** `aegis-analyst` (fleet-first pilot; not fleet-wide)
 
 **Gap:** Revenue/MRR figures leave the fleet and reach Hamid / `aegis-ceo` with no second check that the claimed numbers are supported by the cited corp-orchestrator payload. A producer that grades its own report in the same context is biased toward agreeing with itself.
@@ -26,7 +26,7 @@ Running record of proposed / approved / declined skill, verification, and memory
 
 ## Proposal SU-2026-09-13-2 — Structured memory standard (pilot: `aegis-infra`)
 
-**Status:** approved (2026-09-13) by Hamid — **applied** (2026-09-13)  
+**Status:** **applied** (2026-09-13) (approval not cited: no PR URL or operator-queue response ID on record)  
 **Agent:** `aegis-infra` first; other agents only after further approval
 
 **Gap:** Loose topic logs without a consult-first spine.
@@ -37,7 +37,7 @@ Running record of proposed / approved / declined skill, verification, and memory
 
 ## Proposal SU-2026-09-13-3 — P0 fail-closed wording (check-revenue + VP synthesize)
 
-**Status:** approved (2026-09-13) by Hamid — **applied** (2026-09-13)  
+**Status:** **applied** (2026-09-13) (approval not cited: no PR URL or operator-queue response ID on record)  
 **Agents:** `aegis-analyst`, `the-brain`  
 **Type:** narrow logic / wording fix — **no new capability**
 
@@ -120,7 +120,7 @@ Reply **approved** / **approve** to accept, or decline with a reason. Nothing is
 ## Change log
 
 - 2026-09-13: File created. Logged SU-2026-09-13-1 and SU-2026-09-13-2 as proposed.
-- 2026-09-13: Both approved by Hamid; both applied (analyst verify step + infra `/verify-revenue-claim`; `memory/MEMORY.md` retrofit).
+- 2026-09-13: Both applied (analyst verify step + infra `/verify-revenue-claim`; `memory/MEMORY.md` retrofit).
 - 2026-09-13: Proposed SU-2026-09-13-3; logged DN-2026-09-13-1/2; standing fail-closed check in `/propose-skill-upgrade` Step 2b.
-- 2026-09-13: SU-2026-09-13-3 approved+applied; DN-1 Option A and DN-2 Option B+mandatory queue approved+applied; A2A edges analyst→ceo and TI→ceo granted.
+- 2026-09-13: SU-2026-09-13-3 applied; DN-1 Option A and DN-2 Option B+mandatory queue applied; A2A edges analyst→ceo and TI→ceo granted.
 - 2026-09-14: Proposed SU-2026-09-13-4 (per-task Slack performance report) — not applied. Created Slack channels `#aegis-threat-intel`, `#aegis-analyst`, `#the-brain` (outbound proactive + smoke posts confirmed).

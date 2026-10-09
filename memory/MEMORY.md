@@ -8,7 +8,7 @@ Consult-first spine for `aegis-infra`. Topic logs under `memory/*.md` remain the
 - **2026-09-13** — `aegis-infra`, `aegis-threat-intel`, `aegis-analyst`: free-pool via OmniRoute (Gemini); Trinity subscription cleared, `use_platform_api_key=false`, `.credentials.enc` for durability. Source: `memory/tier-assignments.md` + live chat `Provider: gemini` checks.
 - **2026-09-13** — OmniRoute is the live free/mid router for this fleet (local gateway; health/routing confirmed in ops). Source: `/audit-omniroute` runs + README gotchas.
 - **2026-09-13** — Gemini Flash remains on free-tier path used by free-pool; Pro models are paid. Source: `memory/pricing-checks.md`.
-- **2026-09-13** — SU-2026-09-13-1 and SU-2026-09-13-2 approved by Hamid. Source: `memory/skill-proposals.md`.
+- **2026-09-13** — SU-2026-09-13-1 and SU-2026-09-13-2 applied (approval not cited: no PR URL or operator-queue response ID on record). Source: `memory/skill-proposals.md`.
 
 ## Rules / lessons
 
