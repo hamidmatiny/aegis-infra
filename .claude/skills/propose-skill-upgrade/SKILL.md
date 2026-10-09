@@ -55,7 +55,7 @@ Verified against this fleet's Trinity instance / docs — prefer these over patt
 
 ### Step 1: Roster + sources
 
-1. Call `mcp__trinity__list_agents` (if available) for the live roster — do not invent hires from memory.
+1. Read the live roster from `memory/fleet-roster.json` (host-written every minute from Trinity `agent_ownership`). Do not use `list_agents` for the roster: on this agent's key it returns outbound A2A peers only. Do not invent hires from memory.
 2. For each agent under review, read what you can: that agent's `CLAUDE.md` / skills / `memory/` from its GitHub repo or a known local checkout. Prefer committed repo state.
 3. Read `memory/skill-proposals.md` and `memory/tier-assignments.md` so you don't re-propose declined or already-approved items.
 

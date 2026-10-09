@@ -71,7 +71,7 @@ Pause these when **enabled**. Skip if already disabled (do not claim credit).
 | `aegis-audit` | Self-improvement |
 | `aegis-infra` | Self-improvement (staggered); Dashboard refresh |
 
-Resolve the **live** schedule list each run via `list_agent_schedules` for **every** agent returned by `list_agents` (minus `trinity-system`). The table above is a hint — if a free-pool/mid-cost agent has an autonomous schedule not listed, include it.
+Resolve the **live** schedule list each run via `list_agent_schedules` for **every** agent in `memory/fleet-roster.json` (host-written from Trinity `agent_ownership`; `list_agents` on this key returns outbound peers only). The table above is a hint — if a free-pool/mid-cost agent has an autonomous schedule not listed, include it.
 
 **Never pause:**
 

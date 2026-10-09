@@ -39,7 +39,9 @@ Before budgeting against free-pool RPD ceilings, resolve the **live** OmniRoute 
 
 ### Step 1: Pull real workload (not a guess)
 
-For each fleet agent (from `list_agents` + `memory/tier-assignments.md`):
+First run `python3 scripts/allocation_inputs.py`. It prints the full roster (`roster`, `roster_count`, from `memory/fleet-roster.json`, which the host writes from Trinity `agent_ownership` every minute) and today's SI gate (`si`: `open` / `deferred`, from the capacity watcher's own 429 rule). Use those values; do not recompute them. If it exits 1, the `problems` list says which input is missing or stale. Report that and stop; do not fall back to `list_agents`, which on this agent's key returns only outbound A2A peers (it returned 7 on 2026-10-09 when the fleet had 16).
+
+For each agent in `roster` (plus `memory/tier-assignments.md` for tier):
 
 1. List enabled schedules (Trinity API or MCP) — cron + message/skill.
 2. Estimate today's expected runs from cron (UTC).
@@ -65,7 +67,9 @@ si_budget      = max(0, fair_share_of_provider_ceiling - allocatable)
 
 Interpret `si_budget`: surplus beyond task needs + reserve **must** go to self-improvement when > 0. If ceiling is tight and si_budget is 0, say so — no fake SI mandate that would burn the reserve.
 
-**Cool-pool floor (2026-10-08).** If today's OmniRoute `call_logs` show fewer than 40 responses in {429, 503, 504} and no capacity hold is active, set `si_budget` to at least 1 for **one** free-pool agent: the next unfired SI window from the live roster. Every other agent's `si_budget` stays 0 that day. This is one bounded run, not a surplus for the whole fleet. If the error count is 40 or higher, the floor is 0 and SI stays deferred.
+**Cool-pool floor (2026-10-08; gate fixed 2026-10-09).** If `allocation_inputs.py` reports `si: open`, set `si_budget` to at least 1 for **one** free-pool agent (from `free_pool_si_candidates`): the next unfired SI window. Every other agent's `si_budget` stays 0 that day. This is one bounded run, not a surplus for the whole fleet. If it reports `si: deferred`, the floor is 0 and SI stays deferred; quote `si_reason`.
+
+The SI gate is the capacity watcher's rule: **429 only** (daily 429 >= 100, or 40 x 429 inside 10 minutes) or an active hold. **503 and 504 never defer SI.** They are upstream noise (provider "high demand", local queue expiry). Report `status_counts_today` for 503/504 as information only. On 2026-10-09 this skill counted 530 errors across 429/503/504 and zeroed SI for the whole fleet; that was wrong.
 
 **Who owns whether improvement runs (Hamid, 2026-10-08).** `aegis-infra` is accountable for whether a self-improvement slot runs. The duties are:
 
@@ -89,12 +93,12 @@ Shared free Gemini key failure mode: concurrent agents → 429 stampede.
 Rules:
 
 1. At most **one** free-pool self-improvement run in flight fleet-wide.
-2. Stagger SI windows by agent (UTC). **Build the stagger list every run from live `list_agents`** (exclude `trinity-system` and premium subscription agents that do not share the free-pool key). Do not freeze a 5–7 agent example. Example spacing (+60 min): assign free-pool agents in name-sort order starting 15:00 UTC; mid-cost OmniRoute agents on a separate CFP path when available. Example (illustrative only — regenerate from live roster):
+2. Stagger SI windows by agent (UTC). **Build the stagger list every run from `free_pool_si_candidates`** in `allocation_inputs.py` (full roster minus subscription agents). Do not freeze an example list and never write a fixed agent count. Example spacing (+60 min): assign free-pool agents in name-sort order starting 15:00 UTC; mid-cost OmniRoute agents on a separate CFP path when available. Example (illustrative only — regenerate from live roster):
    - free-pool: infra 15:00 · threat-intel 16:00 · analyst 17:00 · data-quality 18:00 · growth 19:00 · scout / redteam / others continue +1h
 3. Core scheduled jobs also stagger where crons would collide on the minute — prefer existing template crons; if two fire same minute, offset one by +5–10 minutes via schedule update and log it.
-4. Before starting SI, run `/token-budget` (or read today's log): if Gemini family already showing sustained 429s / 503s, **defer SI** and spend only task+reserve.
-5. **Live SI schedule gate (enforced in schedule message + here):** SI slots must check spare capacity **before** any skill edit. If `si_budget` for today is 0, SI was deferred in `memory/daily-allocations.md`, or OmniRoute is already exhausted (sustained 429/503), the agent replies `NONE (no surplus capacity)` and exits — schedules still fire, but must not burn capacity. Stagger alone is not a capacity check.
-6. **Coverage check:** after writing `memory/daily-allocations.md`, assert every non-system agent from today's `list_agents` appears in the table (or is explicitly marked N/A with reason, e.g. premium CEO). If any hire is missing, that is a bug — fix before Slack close-out.
+4. Before starting SI, run `python3 scripts/allocation_inputs.py`: if `si` is `deferred`, **defer SI** and spend only task+reserve. 503/504 alone never defer SI.
+5. **Live SI schedule gate (enforced in schedule message + here):** SI slots must check spare capacity **before** any skill edit. If `si_budget` for today is 0, SI was deferred in `memory/daily-allocations.md`, or the capacity watcher reports a 429 trip (`si: deferred` in `memory/capacity-state.json`), the agent replies `NONE (no surplus capacity)` and exits — schedules still fire, but must not burn capacity. Stagger alone is not a capacity check.
+6. **Coverage check:** after writing `memory/daily-allocations.md`, assert every agent in `roster` from `allocation_inputs.py` appears in the table (`roster_count` rows) (or is explicitly marked N/A with reason, e.g. premium CEO). If any hire is missing, that is a bug — fix before Slack close-out.
 
 ### Step 5: Persist, report, Slack
 

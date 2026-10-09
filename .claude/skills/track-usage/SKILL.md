@@ -24,7 +24,7 @@ Produce a real, numbers-based weekly rollup of token/cost usage per agent in the
 
 This skill has two possible data sources, and either or both may be available depending on deployment state:
 
-- **Trinity's own execution/cost data** (when this agent is deployed on Trinity and has the `mcp__trinity__*` tools): `list_agents` for the current fleet roster, `list_recent_executions` / `get_agent_activity_summary` per agent for cost and execution counts over the window.
+- **Trinity's own execution/cost data** (when this agent is deployed on Trinity and has the `mcp__trinity__*` tools): `memory/fleet-roster.json` for the current fleet roster (not `list_agents`, which returns outbound peers only on this key), `list_recent_executions` / `get_agent_activity_summary` per agent for cost and execution counts over the window.
 - **OmniRoute's own usage/cost logs** (for agents routed through it, not on subscription auth): reachable only if `OMNIROUTE_API_URL` is set and `/audit-omniroute` has confirmed it's live — check `memory/tier-assignments.md` for which agents are actually routed through OmniRoute before assuming this source covers them.
 
 If neither is reachable, say so plainly and stop rather than fabricate figures — this is exactly the "don't just assume everything is fine" case CLAUDE.md warns about.

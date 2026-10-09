@@ -162,7 +162,7 @@ Same-branch Cyber peers (`aegis-threat-intel` ↔ `aegis-redteam`) may also use 
 
 ---
 
-## Approved exception (verify-before-publish)
+## Standing exception (verify-before-publish)
 
 Hamid’s decision (2026-09-14): **keep** this edge. Capacity HOLD edges above are a **second** standing exception (Protocol C). Any other specialist→specialist grant that crosses branches must still be refused and routed through the requester’s manager (`aegis-ceo` today).
 

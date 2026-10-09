@@ -31,7 +31,7 @@ Every new hire’s local clone **must** be added to the fleet Cursor multi-root 
 2. Add a folder entry to `/Users/hamidrezamatiny/Cursor/aegis-fleet.code-workspace` (and keep `aegis/redteam/scripts/aegis-company.code-workspace` in sync if still used).
 3. Confirm the folder appears in the Cursor workspace sidebar before closing the hire checklist.
 
-Source of truth for the roster: Trinity `list_agents` + `docs/org-chart.md`. Workspace membership must match the live roster (excluding `trinity-system`).
+Source of truth for the roster: `memory/fleet-roster.json` (Trinity `agent_ownership`, written by the host) + `docs/org-chart.md`. `list_agents` on this key returns outbound peers only. Workspace membership must match the live roster (excluding `trinity-system`).
 
 ### Step 1: Gather the role's actual requirements
 

@@ -223,6 +223,44 @@ def publish_roster() -> dict:
     return payload
 
 
+def si_gate(signals: dict, watcher_status: str | None) -> dict:
+    """Self-improvement gate. Same rule as the hold: 429 only.
+
+    503 and 504 are upstream noise (provider "high demand", queue expiry). They
+    keep a hold from lifting early, but they never defer self-improvement.
+    """
+    if watcher_status == "active":
+        return {"si": "deferred", "reason": "capacity hold active"}
+    if signals.get("hold"):
+        return {"si": "deferred", "reason": f"429 trip (daily_429={signals.get('daily_429')}, burst_10m={signals.get('burst_10m')})"}
+    return {"si": "open", "reason": f"no 429 trip (daily_429={signals.get('daily_429')}, burst_10m={signals.get('burst_10m')})"}
+
+
+def capacity_state(events, now: datetime, watcher_status: str | None) -> dict:
+    signals = live_signals(events, now)
+    return {
+        "source": "scripts/capacity-watch.py (host, every 60 s)",
+        "written_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "watcher_status": watcher_status or "inactive",
+        "signals": signals,
+        "today_status_counts": {
+            str(code): sum(1 for _, s in events if s == code) for code in (429, 503, 504)
+        },
+        "note": "503/504 counts are informational. They never defer SI and never open a hold.",
+        **si_gate(signals, watcher_status),
+    }
+
+
+def _publish_memory_file(name: str, payload: dict) -> None:
+    body = json.dumps(payload, indent=2) + "\n"
+    dest = Path("/Users/hamidrezamatiny/Cursor/aegis-infra/memory") / name
+    dest.write_text(body)
+    subprocess.run(
+        ["docker", "exec", "-i", "agent-aegis-infra", "tee", f"/home/developer/memory/{name}"],
+        input=body, text=True, capture_output=True, check=False,
+    )
+
+
 def apply_or_lift(execute: bool) -> int:
     now = datetime.now(timezone.utc).replace(microsecond=0)
     start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -295,6 +333,12 @@ def apply_or_lift(execute: bool) -> int:
         result["roster"] = publish_roster()
     except Exception as exc:
         result["roster_error"] = str(exc)[:200]
+    try:
+        cap = capacity_state(events, now, load_state().get("status"))
+        _publish_memory_file("capacity-state.json", cap)
+        result["si"] = cap["si"]
+    except Exception as exc:
+        result["capacity_state_error"] = str(exc)[:200]
     print(json.dumps(result, indent=2))
     return 0
 

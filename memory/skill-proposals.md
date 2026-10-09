@@ -130,7 +130,7 @@ Reply **approved** / **approve** to accept, or decline with a reason. Nothing is
 
 ## Proposal SU-2026-09-16-1 — Automated usage anomaly escalation to `aegis-ceo` (`aegis-infra`)
 
-**Status:** **approved** (2026-09-16) by `aegis-ceo` under Hamid's routine skill-upgrade delegation — **applied** (2026-09-16)  
+**Status:** **applied** (2026-09-16) (approval not cited: no PR URL or operator-queue response ID on record)  
 **Agent:** `aegis-infra`  
 **Type:** skill workflow upgrade (active A2A notification)
 
@@ -142,5 +142,5 @@ Reply **approved** / **approve** to accept, or decline with a reason. Nothing is
 
 **Tier/cost:** free-pool (one A2A chat when escalating).  
 **Pilot scope:** `aegis-infra` `/track-usage` only.
-- 2026-09-16: SU-2026-09-16-1 **approved by aegis-ceo** (first delegated skill-upgrade decision) and applied to `/track-usage` Step 7 + allowed-tools.
+- 2026-09-16: SU-2026-09-16-1 applied (approval not cited: no PR URL or operator-queue response ID on record) to `/track-usage` Step 7 + allowed-tools.
 - 2026-09-16: Hamid delegated routine skill-upgrade approval to `aegis-ceo` (documented in `/propose-skill-upgrade` + `aegis-ceo` CLAUDE.md); Hamid-only hard lines unchanged.
