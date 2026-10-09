@@ -19,6 +19,18 @@ Schedule-derived task / reserve / SI budgets. Written by `/daily-allocation`.
 
 **Stampede rule today:** max 1 free-pool SI in flight fleet-wide; windows strictly staggered from 15:00 UTC to 19:00 UTC.
 
+## 2026-10-08 (cool-pool floor — one SI slot)
+
+OmniRoute `call_logs` for this UTC day, read before re-enabling schedules: 196×200, 0×429, 1×504. That is under the 40-error floor. No capacity hold is active. Arithmetic surplus is still 0 after task needs and the 20% reserve, so the cool-pool floor applies: **one** free-pool SI slot, not a fleet-wide surplus.
+
+| Agent | si_budget today | Why |
+|-------|-----------------|-----|
+| aegis-analyst | 1 | Next unfired SI window is 17:00 UTC. This is the one slot. |
+| aegis-infra, aegis-threat-intel | 0 | 15:00 and 16:00 windows already passed today. |
+| aegis-data-quality, aegis-growth | 0 | Later windows stay off so only one SI runs. |
+| aegis-ceo, aegis-redteam | 0 | Subscription agents. Not on the free-pool SI key. |
+| aegis-core-infra, aegis-scout, aegis-product-eng, aegis-gateway, aegis-policy-engine, aegis-model-router, aegis-agent-gate, aegis-audit, the-brain | 0 | No SI schedule row exists. Not assigned a slot today. |
+
 ## STALENESS NOTE (2026-09-20)
 
 The 2026-09-16 table above covers **7 agents only**. Live fleet is **15+** (`list_agents`: includes scout, product-eng, 5 PE ICs, redteam). Skills that assign SI/HOLD **must** regenerate from live `list_agents` each run — do not copy this table forward. Next `/daily-allocation` must list every non-system agent or mark N/A with reason.

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.aegis.omniroute</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/hamidrezamatiny/Library/Application Support/aegis-omniroute/run-omniroute.sh</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>5</integer>
+  <key>WorkingDirectory</key>
+  <string>/Users/hamidrezamatiny</string>
+  <key>StandardOutPath</key>
+  <string>/Users/hamidrezamatiny/Library/Logs/aegis-omniroute/stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/hamidrezamatiny/Library/Logs/aegis-omniroute/stderr.log</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/hamidrezamatiny/.npm-global/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+    <key>PORT</key>
+    <string>20129</string>
+    <key>OMNIROUTE_SERVER_HOST</key>
+    <string>0.0.0.0</string>
+    <key>HOME</key>
+    <string>/Users/hamidrezamatiny</string>
+  </dict>
+</dict>
+</plist>

@@ -1,0 +1,31 @@
+{
+  "until": "2026-10-25",
+  "note": "Capacity-watch lift must skip these ids. Restore by enabling them from freeze-2026-09-25.md on or after 2026-10-25. Do not delete this file until that restore is done.",
+  "exclude_from_lift": [
+    {"agent": "aegis-ceo", "id": "poHHBZNXNr2j9iYpZ_Tt6Q", "name": "Weekly project manage", "cron": "30 9 * * 1"},
+    {"agent": "aegis-ceo", "id": "4Ch3es2N0Z3eIUZlAFMb-w", "name": "Weekly strategy brief", "cron": "0 9 * * 1"},
+    {"agent": "aegis-ceo", "id": "n6V_3_s_KX8Vsk9TZINDtw", "name": "GitHub pulse", "cron": "30 7 * * *"},
+    {"agent": "aegis-redteam", "id": "tMSSsfztnjoCnQgFolWMDw", "name": "Dashboard refresh", "cron": "30 */6 * * *"},
+    {"agent": "aegis-infra", "id": "hKqrKOAQXLlnwbSsdsLaTg", "name": "Daily allocation", "cron": "10 7 * * *"},
+    {"agent": "aegis-infra", "id": "edNfTtzxC6D2vT434UJXaQ", "name": "Daily token budget", "cron": "0 7 * * *"},
+    {"agent": "aegis-threat-intel", "id": "Lz4WW0ppS2yKvNj0qupHXw", "name": "Self-improvement (staggered)", "cron": "0 16 * * *"},
+    {"agent": "aegis-threat-intel", "id": "bB3VSeMKufnwKuhTJ0mnAQ", "name": "Threat scan", "cron": "5 */6 * * *"},
+    {"agent": "aegis-analyst", "id": "zdrXAwNmgEFesUFeRxOPkw", "name": "Self-improvement (staggered)", "cron": "0 17 * * *"},
+    {"agent": "aegis-analyst", "id": "UWCxvqa1mUXuR9CyTOku0g", "name": "Daily revenue check", "cron": "15 13 * * *"},
+    {"agent": "aegis-core-infra", "id": "RXU1OCwaiK8WaHQp-p-lCg", "name": "Daily infra diff review", "cron": "25 7 * * *"},
+    {"agent": "aegis-data-quality", "id": "OtDMHbM9Z1Ty7BkxTFSDwg", "name": "Self-improvement (staggered)", "cron": "0 18 * * *"},
+    {"agent": "aegis-data-quality", "id": "eaCvgjocqPNIAeHFYVP90Q", "name": "Fleet output review", "cron": "0 */12 * * *"},
+    {"agent": "the-brain", "id": "_mMZsB-UjDzEyWpqov5g9g", "name": "Fleet KG ingest", "cron": "40 10,22 * * *"},
+    {"agent": "aegis-growth", "id": "DZ9JXPq-zXPLJDr_BlwxlQ", "name": "Self-improvement (staggered)", "cron": "0 19 * * *"},
+    {"agent": "aegis-growth", "id": "TOvM2aKqDwtGVIzUJvbevw", "name": "Weekly directory pass", "cron": "30 15 * * 4"},
+    {"agent": "aegis-growth", "id": "Wj_FluyZLXuW5m259QQ_kQ", "name": "Weekly SEO draft", "cron": "0 15 * * 3"},
+    {"agent": "aegis-growth", "id": "2DRE8WrLwqMLM6pbNDLhhw", "name": "Daily growth check", "cron": "0 14 * * *"},
+    {"agent": "aegis-infra", "id": "Rx4yPoZTIUYpmCe0-8g0jQ", "name": "Self-improvement (staggered)", "cron": "0 15 * * *"},
+    {"agent": "aegis-infra", "id": "NSyFOCYjfzvsGufGjYsajA", "name": "Dashboard refresh", "cron": "20 */6 * * *"},
+    {"agent": "aegis-infra", "id": "q7HPub8g5TpfiB0h7h62yQ", "name": "Pricing & free-tier re-check", "cron": "0 9 */14 * *"},
+    {"agent": "aegis-infra", "id": "AYzG9el8SQraS2oBzf3_Ag", "name": "Weekly usage rollup", "cron": "0 8 * * 1"},
+    {"agent": "aegis-scout", "id": "eL1Z-YNiRbwHqWIHZkq7aA", "name": "Weekly doc reconciliation", "cron": "0 9 * * 1"},
+    {"agent": "aegis-scout", "id": "fbAMxpEbIridint2FI1WrQ", "name": "Founder learning curation", "cron": "0 11 * * 1"},
+    {"agent": "aegis-scout", "id": "3CT3vtQyrVIv4FevzLkSSg", "name": "Fleet capability scout", "cron": "0 10 * * 1,4"}
+  ]
+}

@@ -4,11 +4,9 @@ Written by `/capacity-hold`. Tracks which schedules `aegis-infra` actually pause
 
 ## Current status
 
-**status:** `active` (fleet HOLD in force due to 1315 429s today)  
-**authority:** `aegis-infra` (Protocol C — standing exception)  
-**last_proof:** 2026-09-20T00:21Z — full apply→verify→lift on the schedules named in the 2026-09-18 advisory HOLD
-
-Today’s UTC window recorded **1315 × 429 errors** (exceeding apply threshold ≥100). All HOLDable schedules across the fleet were verified already disabled (`enabled: false`), so 0 new schedules were paused. Core safety schedules (`Daily allocation`, `Daily token budget`) remain active.
+**status:** `lifted` (host watcher lifted 2026-10-09T00:00:41Z under the normal lift rule: daily_429=0, errors_2h=0)  
+**authority:** host `scripts/capacity-watch.py` (Protocol C), every 60 s. Not the 07:00 LLM check. State file: `~/Library/Application Support/aegis-capacity-watch/state.json` on the Mac.  
+**last lift:** 19 HOLDable schedules re-enabled, each HTTP 200. Trip rule is 429 only (daily 429 >= 100, or 40 x 429 in 10 min); 503/504 count only toward the 2-hour lift guard.
 
 ## Proof (round-trip — real Trinity toggles)
 
@@ -33,3 +31,4 @@ Tool: `mcp__trinity__toggle_agent_schedule`. A2A edges `aegis-infra` → HOLD ta
 | 2026-09-18 | Advisory Slack HOLD only | **No toggles** — schedules kept firing |
 | 2026-09-20 | Protocol C + `/capacity-hold` + permission grants + proof apply/lift | Real teeth; fleet left **unpaused** (429s below apply threshold at proof time) |
 | 2026-09-25 | `/capacity-hold apply` triggered by 1315 × 429s | HOLD activated; all HOLDable schedules already verified `enabled: false` |
+| 2026-09-23T16:34Z | Host watcher apply | 19 schedules disabled. Replay trip 14:07:21Z. Redteam attack batch and the two infra recovery schedules left on. |

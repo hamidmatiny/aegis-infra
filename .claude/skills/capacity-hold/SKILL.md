@@ -32,13 +32,15 @@ Documented in `docs/a2a-routing.md` § Protocol C. Narrow A2A edges `aegis-infra
 | `lift` / recover | Re-enable only schedules listed under the active HOLD |
 | `status` | Report `memory/capacity-hold.md` + live enabled flags for tracked IDs |
 
-## HOLD threshold (reuse existing judgment — do not invent a second detector)
+## HOLD threshold
 
-Apply HOLD when **any** of these is true from a fresh `/token-budget` (or same-run query of live OmniRoute `call_logs`):
+Apply HOLD when **any** of these is true from live OmniRoute `call_logs` (the host watcher below, or a fresh `/token-budget` when the model can still run):
 
-1. Today's Gemini-family **429 count ≥ 100**, **or**
-2. Sustained exhaustion language already in today's token-budget verdict (e.g. "exhausted / rate-limited today", "HOLD autonomous tasks"), **or**
+1. Today's **429 count ≥ 100**, **or**
+2. **40** responses with status 429, 503, or 504 inside any **10-minute** window (fast burst — the 2026-09-23 afternoon storm), **or**
 3. Operator/`aegis-ceo`/Hamid explicitly orders a capacity HOLD
+
+**Host watcher (required).** `scripts/capacity-watch.py` runs on the Mac every 60s via LaunchAgent `com.aegis.capacity-watch`. It reads `~/.omniroute/storage.sqlite` and calls Trinity `POST /api/agents/{name}/schedules/{id}/disable` directly. It does **not** call a model. The daily `/token-budget` job cannot be the circuit breaker: it runs once at 07:00 UTC, and it itself uses the free pool, so it cannot fire during the exhaustion it is meant to catch. State lives in `~/Library/Application Support/aegis-capacity-watch/state.json`. Do not re-enable a schedule that file lists under an active hold unless lift criteria pass. The 2026-09-25 sprint freeze ended 2026-10-08; lift is no longer excluded by that list.
 
 Lift HOLD when **all** are true:
 
@@ -57,7 +59,7 @@ Pause these when **enabled**. Skip if already disabled (do not claim credit).
 | `aegis-analyst` | Daily revenue check; Self-improvement |
 | `aegis-core-infra` | Daily infra diff review |
 | `aegis-threat-intel` | Threat scan; Self-improvement |
-| `aegis-redteam` | Live gateway attack batch; Self-improvement |
+| `aegis-redteam` | **Do not pause.** Subscription OAuth, not OmniRoute. Live gateway attack batch is the security pipeline. |
 | `aegis-data-quality` | Fleet output review; Self-improvement |
 | `aegis-growth` | Daily growth check; Self-improvement; Weekly SEO draft; Weekly directory pass |
 | `aegis-scout` | Fleet capability scout; Founder learning; Self-improvement |
@@ -71,11 +73,12 @@ Pause these when **enabled**. Skip if already disabled (do not claim credit).
 
 Resolve the **live** schedule list each run via `list_agent_schedules` for **every** agent returned by `list_agents` (minus `trinity-system`). The table above is a hint — if a free-pool/mid-cost agent has an autonomous schedule not listed, include it.
 
-**Never pause** (capacity sensing + recovery path):
+**Never pause:**
 
 - `aegis-infra` Daily token budget
 - `aegis-infra` Daily allocation
-- Premium CEO schedules (not free-pool burners)
+- `aegis-ceo` (premium subscription)
+- `aegis-redteam` (subscription OAuth; live attack batch must keep running when the free pool is dead)
 
 Refresh IDs with `list_agent_schedules` every run — do not hardcode IDs in the skill body beyond `memory/capacity-hold.md` for the active HOLD.
 
