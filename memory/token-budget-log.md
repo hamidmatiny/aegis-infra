@@ -28,3 +28,33 @@ OmniRoute tables `provider_quota_state`, `api_key_token_limits`, `api_key_token_
 - **Remaining this week / month:** **not queryable** for any fleet provider — no weekly/monthly balance API. Show rolling consumption only.
 
 Proxy ceilings used when needed (label as proxy, not project-certified): Flash ≈ 20 RPD / 5 RPM; Flash-Lite ≈ 500 RPD / 15 RPM (community measurement 2026-09-02; Google: check AI Studio).
+
+## 2026-09-16 — SQLite path clarification (not data loss)
+- Host DB **present**: `~/.omniroute/storage.sqlite` (live; call_logs continuing).
+- Agent container **cannot see** host `~/.omniroute` (no bind mount) — prior "missing" report was path isolation, not deletion.
+- Recovery: snapshot copied to `memory/omniroute-storage.sqlite`; `OMNIROUTE_SQLITE` set. Re-copy before precise budget runs.
+
+## 2026-09-16 — Durable live bind (replaces snapshot)
+- **Fix:** host bind mount `~/.omniroute` → `/home/developer/.omniroute` (ro) on `agent-aegis-infra`; `OMNIROUTE_SQLITE=/home/developer/.omniroute/storage.sqlite`.
+- **Script:** `scripts/mount-omniroute-sqlite.sh` (idempotent; re-run after full redeploy).
+- **Survives:** Trinity `recreate_container_with_updated_config` forwards existing binds (lifecycle.py).
+- **Evidence (same day):** host INSERT into `call_logs` with marker `DURABILITY_PROBE_*` appeared immediately inside the container (`found_rows=1`, matching `max(timestamp)`) with **no copy step**; host DELETE similarly cleared the container view. Probe row removed after verification.
+- Skills `/token-budget` and `/daily-allocation` now prefer the live mount; `memory/` snapshot is WARN-only fallback.
+
+## 2026-09-17 — Capacity gate before Phase 1 component-owner hires
+
+**Question:** Can the fleet absorb five new Track B agents (gateway, policy-engine, model-router, agent-gate, audit) now?
+
+**Evidence (host `~/.omniroute/storage.sqlite` `call_logs`, read-only):**
+
+| Day (UTC) | Calls | 429s | tokens_in ≈ |
+|-----------|-------|------|-------------|
+| 2026-09-17 | 1714 | **469** | 33.4M |
+| 2026-09-16 | 1632 | 313 | 41.8M |
+| 2026-09-15 | 1390 | 232 | 28.9M |
+
+Today status mix: 200×545, 503×479, **429×469**, 502×162. Gemini alone: 943 calls / 320×429. Worst models: `gemini-3.1-pro-preview` 117/117×429; flash-lite family heavy 429s.
+
+**Verdict:** Headroom is **thin**. Do **not** launch five mid-cost agents. Approve **free-pool SE I** only, and **stagger** deploys (gateway first, then ~hours apart) rather than all five simultaneous first chats. Daily allocation / reserve / SI rules still apply; new agents start with schedules **disabled** until first audit succeeds and 429 rate cools.
+
+**Recorded by:** hire pipeline (Cursor session) on behalf of aegis-infra capacity check requested by Hamid.

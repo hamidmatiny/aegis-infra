@@ -117,9 +117,9 @@ Examples that must **not** be added:
 
 **Authority:** `aegis-infra` **judges and executes**. It already owns capacity evidence (`/token-budget`, `/daily-allocation`). Requiring `aegis-ceo` to approve the pause before toggles recreated the failure mode. CEO is **notified after** apply/lift via `chat_with_agent` — not a gate.
 
-**Mechanism:** skill `/capacity-hold` → `mcp__trinity__toggle_agent_schedule` on the HOLDable set (revenue check, infra-diff, threat scan, fleet review, growth check, SI slots, etc.). State + paused IDs live in `memory/capacity-hold.md` so lift only re-enables what this skill paused. Thresholds reuse token-budget judgment (see skill) — no second detector.
+**Mechanism:** `scripts/capacity-watch.py` (LaunchAgent `com.aegis.capacity-watch`, every 60s) reads OmniRoute `call_logs` and disables HOLDable schedules through the Trinity API. It does not call a model. The daily `/token-budget` skill remains the morning report; it is not the circuit breaker — it runs once at 07:00 UTC on the same free pool, so it cannot see or act on an afternoon burst. Trip on today's 429 count ≥ 100, or on 40 of {429, 503, 504} inside 10 minutes. State + paused IDs: `~/Library/Application Support/aegis-capacity-watch/state.json`. `/capacity-hold` is the manual path and must not re-enable IDs that file still lists.
 
-**Never pause:** infra `Daily token budget` and `Daily allocation` (recovery path).
+**Never pause:** infra `Daily token budget` and `Daily allocation` (recovery path); `aegis-ceo`; `aegis-redteam` (subscription OAuth — the live attack batch is not a free-pool burner).
 
 **Standing A2A edges (narrow — schedule list/toggle only; not a general chat channel):**
 

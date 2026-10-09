@@ -124,3 +124,23 @@ Reply **approved** / **approve** to accept, or decline with a reason. Nothing is
 - 2026-09-13: Proposed SU-2026-09-13-3; logged DN-2026-09-13-1/2; standing fail-closed check in `/propose-skill-upgrade` Step 2b.
 - 2026-09-13: SU-2026-09-13-3 approved+applied; DN-1 Option A and DN-2 Option B+mandatory queue approved+applied; A2A edges analyst→ceo and TI→ceo granted.
 - 2026-09-14: Proposed SU-2026-09-13-4 (per-task Slack performance report) — not applied. Created Slack channels `#aegis-threat-intel`, `#aegis-analyst`, `#the-brain` (outbound proactive + smoke posts confirmed).
+- 2026-09-16: Proposed SU-2026-09-16-1 (Automated usage anomaly escalation to `aegis-ceo` in `/track-usage`) — not applied.
+
+---
+
+## Proposal SU-2026-09-16-1 — Automated usage anomaly escalation to `aegis-ceo` (`aegis-infra`)
+
+**Status:** **approved** (2026-09-16) by `aegis-ceo` under Hamid's routine skill-upgrade delegation — **applied** (2026-09-16)  
+**Agent:** `aegis-infra`  
+**Type:** skill workflow upgrade (active A2A notification)
+
+**CEO evidence (not rubber-stamped):** `/track-usage` Step 7 already said escalate to CEO but had **no mechanism**; `chat_with_agent` was missing from `allowed-tools`; A2A infra→ceo already granted; not a Hamid-only hard line. Conditions: add tool + explicit trigger criteria — both applied.
+
+**Applied as:**
+1. Added `mcp__trinity__chat_with_agent` to `/track-usage` `allowed-tools`.
+2. Rewrote Step 7 with explicit escalate triggers (≥2× WoW, free-pool→mid-scale, 429/503 storm blocking core work, infra self trending premium-scale) + fail-closed delivery / operator-queue fallback.
+
+**Tier/cost:** free-pool (one A2A chat when escalating).  
+**Pilot scope:** `aegis-infra` `/track-usage` only.
+- 2026-09-16: SU-2026-09-16-1 **approved by aegis-ceo** (first delegated skill-upgrade decision) and applied to `/track-usage` Step 7 + allowed-tools.
+- 2026-09-16: Hamid delegated routine skill-upgrade approval to `aegis-ceo` (documented in `/propose-skill-upgrade` + `aegis-ceo` CLAUDE.md); Hamid-only hard lines unchanged.

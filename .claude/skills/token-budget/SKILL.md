@@ -109,9 +109,10 @@ Append a dated block to `memory/token-budget-log.md`. Post the same text to Slac
 
 Do **not** end on advisory “HOLD” prose alone.
 
-1. If today's evidence meets `/capacity-hold` **apply** threshold → run `/capacity-hold apply` in the same turn (real `toggle_agent_schedule` calls). Cite the paused schedule_ids in the Slack close-out.
-2. Else if `memory/capacity-hold.md` has `status: active` and evidence meets **lift** threshold → run `/capacity-hold lift`.
-3. Else → no schedule changes; say so explicitly.
+1. If the host watcher state (`~/Library/Application Support/aegis-capacity-watch/state.json`) is `active`, do **not** re-enable those schedules from this skill. The watcher owns the pause and the lift.
+2. If that state is inactive and today's evidence meets `/capacity-hold` **apply** threshold → run `/capacity-hold apply` (real `toggle_agent_schedule` calls). This is the fallback for when the watcher is not running.
+3. Else if an active HOLD exists and evidence meets **lift** threshold → run `/capacity-hold lift` only for IDs this skill paused.
+4. Else → no schedule changes; say so explicitly.
 
 See `docs/a2a-routing.md` Protocol C. Never pause Daily token budget / Daily allocation.
 

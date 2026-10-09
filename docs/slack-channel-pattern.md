@@ -38,6 +38,13 @@ aegis-core-infra      →  #aegis-core-infra
 aegis-data-quality    →  #aegis-data-quality   (C0C1QCJTNH0; bound 2026-09-14)
 aegis-growth           →  #aegis-growth
 aegis-scout            →  #aegis-scout          (C0C297RQ7PY; bound 2026-09-16)
+aegis-gateway          →  #aegis-gateway         (C0C2PTH3997; bound 2026-09-17 Phase 1)
+aegis-policy-engine    →  #aegis-policy-engine   (C0C2FP0JLLT; bound 2026-09-17 Phase 1)
+aegis-model-router     →  #aegis-model-router    (C0C2H462UGM; bound 2026-09-17 Phase 1)
+aegis-agent-gate       →  #aegis-agent-gate      (C0C3GAK85UY; bound 2026-09-17 Phase 1)
+aegis-audit            →  #aegis-audit           (C0C26JJK45D; bound 2026-09-17 Phase 1)
+aegis-product-eng       →  #aegis-product-eng      (C0C2S6U2XN0; bound 2026-09-17; Hamid invited as dept head)
+aegis-redteam          →  #aegis-redteam         (C0C3A47C70E; created+bound 2026-09-21; Hamid invited)
 the-brain             →  #the-brain
 (directory)           →  #fleet-directory   (also bound to aegis-infra only; ask /fleet-directory here)
 ```

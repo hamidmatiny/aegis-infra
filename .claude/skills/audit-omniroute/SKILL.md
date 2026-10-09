@@ -54,6 +54,19 @@ If it doesn't respond, or `OMNIROUTE_API_URL` is unset, stop here — don't fabr
 
 Check `memory/tier-assignments.md` (if it exists — see `/propose-agent-tier`) for agents already assumed to be routed through OmniRoute's mid-cost or free-pool tiers. Flag any assignment that assumes a provider/pool this audit could not confirm is actually live.
 
+### Step 4b: Mid-cost long-prompt health + scout restore (mandatory while exception open)
+
+Live mid combo `sonnet` / `aegis-mid` is Gemini 3.1 Pro → CFP gpt-oss → CFP DeepSeek. CFP hops reject prompts >6000 characters. Trinity agent system prompts exceed that, so **when Pro is quota-blocked, every mid agent (`the-brain`, `aegis-core-infra`, `aegis-scout` on mid) fails the same way** — not scout-specific.
+
+On every audit while `memory/tier-assignments.md` still marks `aegis-scout` on temporary free alias `claude-sonnet-4-6`:
+
+1. Probe `gemini/gemini-3.1-pro-preview` short + ~10k-char.
+2. Probe `sonnet` with ~10k-char; record whether it lands on Pro or dies on CFP `Prompt too long (max 6000)`.
+3. If Pro long-prompt works: flip `aegis-scout` models back to `sonnet`, export credentials, restart, verify, update `memory/tier-assignments.md`, Slack `#aegis-infra`.
+4. If not: leave free alias, re-arm / confirm infra reminder `MID-COST RECOVERY CHECK` (do not rely on memory alone).
+
+Durable fix to propose (do not silently apply OmniRoute config without approval): prompt-size-aware mid routing that **skips 6k-cap CFP hops** for large prompts (fail closed or explicit long-context fallback), instead of per-agent remaps.
+
 ### Step 5: Report findings
 
 Present a plain summary:
@@ -95,15 +108,31 @@ If OmniRoute needs configuration changes to close a gap, **propose** the change 
 
 ### FM-2 — Mid-cost Trinity model alias does not survive restart
 
-**What went wrong:** `the-brain` (VP) mid-cost requires Trinity chat model alias `sonnet` (mapped in OmniRoute to a mid-cost Gemini combo). `PUT /api/agents/<name>/model` is **in-memory** on the agent-server — after restart the agent silently falls back to the default Claude ID, which OmniRoute free-pool remaps to flash-lite.
+**What went wrong:** `the-brain` (VP) mid-cost requires Trinity chat model alias `sonnet` (mapped in OmniRoute to a mid-cost combo). `PUT /api/agents/<name>/model` is **in-memory** on the agent-server — after restart the agent silently falls back to the default Claude ID, which OmniRoute free-pool remaps to flash-lite.
 
 **Correct behavior:** When auditing mid-cost agents, verify the live chat `model` / `model_name` matches the intended alias after any restart. Until durable `AGENT_RUNTIME_MODEL` exists, call out re-apply via `PUT /api/agents/<name>/model` as required ops, not optional polish.
+
+### FM-2b — Mid-cost fallback must not collapse to flash
+
+**What went wrong:** When Gemini Pro quota cooled, mid agents were served flash / flash-lite because `sonnet`/`aegis-mid` were single-step flash (or Claude alias combos pointed at flash-lite) and/or agent `.env` set `ANTHROPIC_DEFAULT_SONNET_MODEL` to a flash model ID.
+
+**Correct behavior:** Audit must confirm combos `sonnet` and `aegis-mid` priority chain is mid-strength only (CFP DeepSeek Pro → GPT-OSS → Gemini Pro — **no** flash). Spot-check a recent call log for mid agents: served model must not be `*flash*`. Fail-closed (429/503) when all mid targets are unavailable is acceptable; silent free-pool collapse is not. Note remaining gap: no Anthropic/OpenAI API-key provider connected yet for a paid Claude/GPT mid rail.
+
+### FM-2c — Mid-cost CFP hops reject Trinity-sized prompts (6k cap)
+
+**What went wrong (2026-09-16):** When `gemini-3.1-pro-preview` is quota-blocked, `sonnet`/`aegis-mid` fall through to CFP gpt-oss / DeepSeek, which return `Prompt too long (max 6000 characters)`. Trinity Claude Code system prompts exceed 6k, so mid agents fail closed on real work — confirmed for the shared combo used by `the-brain`, `aegis-core-infra`, and `aegis-scout`. Temporary per-agent remap of scout to free alias `claude-sonnet-4-6` is a workaround, not a durable fix.
+
+**Correct behavior:** Audit Step 4b probes Pro + long `sonnet`. Propose OmniRoute prompt-size-aware mid routing (skip 6k-cap CFP for large prompts). Restore scout to `sonnet` when Pro long-prompt works (reminder `rem_fcab848e2aa940f8b21c1e6f7da17bae`).
 
 ### FM-3 — Reporting "configured" from intent or a directory alone
 
 **What went wrong:** Treating "OmniRoute is the intended mechanism" or a cloned repo path as proof it is live.
 
 **Correct behavior:** Reachability + configured providers/pools from a real probe, or explicitly "unknown / not reachable." Never invent admin API shape from a template.
+
+### Final step: Slack completed-task close-out (mandatory)
+
+Every run — success or failure — ends with a real post to `#aegis-infra` via `list_channel_groups` (`channel_type: "slack"`) then `send_group_message`. Include: what was asked, who asked, what you did, real outcome, who you reported to. Trinity `report` is not a substitute. See CLAUDE.md § Slack completed-task close-out.
 
 ## Outputs
 

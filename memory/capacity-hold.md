@@ -4,11 +4,9 @@ Written by `/capacity-hold`. Tracks which schedules `aegis-infra` actually pause
 
 ## Current status
 
-**status:** `inactive` (no fleet HOLD in force)  
-**authority:** `aegis-infra` (Protocol C — standing exception)  
-**last_proof:** 2026-09-20T00:21Z — full apply→verify→lift on the schedules named in the 2026-09-18 advisory HOLD
-
-Today’s early UTC window had only ~21×429 (below apply threshold ≥100). Mechanism is live; next `/token-budget` that meets threshold will `apply` for real and leave schedules paused until lift criteria pass.
+**status:** `active` (host watcher applied 2026-09-23T16:34:41Z)  
+**authority:** host `scripts/capacity-watch.py` (Protocol C). Not the 07:00 LLM check.  
+**last_proof:** 2026-09-23T16:34Z — replay of today's `call_logs` trips at 14:07:21Z (`burst_40_in_10m`); live `--apply` disabled 19 HOLDable schedules (`still_enabled_after` empty). `aegis-redteam` Live gateway attack batch left enabled. Daily token budget and Daily allocation left enabled.
 
 ## Proof (round-trip — real Trinity toggles)
 
@@ -32,3 +30,4 @@ Tool: `mcp__trinity__toggle_agent_schedule`. A2A edges `aegis-infra` → HOLD ta
 |------|--------|-------|
 | 2026-09-18 | Advisory Slack HOLD only | **No toggles** — schedules kept firing |
 | 2026-09-20 | Protocol C + `/capacity-hold` + permission grants + proof apply/lift | Real teeth; fleet left **unpaused** (429s below apply threshold at proof time) |
+| 2026-09-23T16:34Z | Host watcher apply | 19 schedules disabled. Replay trip 14:07:21Z. Redteam attack batch and the two infra recovery schedules left on. |

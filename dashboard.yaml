@@ -1,6 +1,6 @@
 title: "AEGIS Infra"
 refresh: 300
-updated: "2026-09-17T23:20:00Z"
+updated: "2026-09-24T17:10:00Z"
 
 sections:
   - title: "Status"
@@ -27,8 +27,8 @@ sections:
     widgets:
       - type: metric
         label: "Agents Tracked"
-        value: "15"
-        description: "Personal fleet excl. trinity-system — verified GET /api/agents 2026-09-17"
+        value: "16"
+        description: "agent_ownership non-system deleted_at null. Not list_agents (that view is outbound peers only)."
       - type: metric
         label: "Anomalies This Week"
         value: "—"
@@ -44,7 +44,7 @@ sections:
       - type: table
         title: "Agents by Tier"
         columns: ["Tier", "Count"]
-        rows: [["Premium", "1"], ["Mid-cost", "4"], ["Free-pool", "10"]]
+        rows: [["Premium", "1"], ["Mid-cost", "4"], ["Free-pool", "10"], ["Pending", "1"]]
       - type: table
         title: "Roster"
         columns: ["Agent", "Tier"]
@@ -64,6 +64,7 @@ sections:
           - ["aegis-model-router", "Free-pool"]
           - ["aegis-agent-gate", "Free-pool"]
           - ["aegis-audit", "Free-pool"]
+          - ["aegis-redteam", "Pending"]
 
   - title: "Recent Activity"
     layout: list
@@ -71,7 +72,8 @@ sections:
       - type: list
         title: "Recent Rollups & Reviews"
         items:
-          - "Agents Tracked 8→15 (Phase 1 SE I + PE manager + scout) — 2026-09-17"
+          - "Agents Tracked is 16 from agent_ownership via memory/fleet-roster.json — 2026-09-24"
+          - "list_agents on the infra key is outbound peers only and had written 7 — 2026-09-24"
           - "SI still deferred (2026-09-15 stampede; daily-allocation cancelled 2026-09-16)"
         max_items: 5
 

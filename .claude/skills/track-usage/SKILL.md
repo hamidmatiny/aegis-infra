@@ -1,12 +1,15 @@
 ---
 name: track-usage
 description: Weekly token/cost usage rollup per agent, using real figures — flags anomalies to the CEO instead of assuming everything is fine
-allowed-tools: Read, Write, Bash, mcp__trinity__list_agents, mcp__trinity__get_agent, mcp__trinity__list_recent_executions, mcp__trinity__get_agent_activity_summary, mcp__trinity__list_channel_groups, mcp__trinity__send_group_message, mcp__trinity__report
+allowed-tools: Read, Write, Bash, mcp__trinity__list_agents, mcp__trinity__get_agent, mcp__trinity__list_recent_executions, mcp__trinity__get_agent_activity_summary, mcp__trinity__list_channel_groups, mcp__trinity__send_group_message, mcp__trinity__report, mcp__trinity__chat_with_agent
 user-invocable: true
 metadata:
-  version: "1.0"
+  version: "1.1"
   created: 2026-09-13
   author: aegis-infra
+  changelog:
+    - "1.1: SU-2026-09-16-1 — fail-closed A2A escalate to aegis-ceo on real anomalies (CEO-approved)"
+    - "1.0: Initial weekly rollup"
 ---
 
 # Track Usage
@@ -49,7 +52,11 @@ An anomaly is a real signal, not a normal range for a genuinely noisy agent. Fla
 
 For each flag, state what's odd and what you'd want to know next — don't diagnose the cause with confidence you don't have.
 
-### Step 5: Record and report
+### Step 5: Report the self-improvement slot
+
+`aegis-infra` owns whether improvement runs (Hamid, 2026-10-08). In the same weekly rollup, name the agent that received the cool-pool SI slot and list every agent that still has no SI schedule. Read the live schedule list. Do not enable a schedule while a capacity hold is active. Scout still picks the skill, the CEO still approves the change, and `the-brain` still records the level.
+
+### Step 6: Record and report
 
 Append this week's rollup to `memory/usage-log.md`:
 
@@ -77,9 +84,26 @@ Once Trinity MCP is available and this agent is bound to Slack, push the **same 
 
 This channel is **owner visibility and Hamid instructions**: post results out; treat inbound Slack from Hamid like Trinity Chat (run the skill). Tier/auth changes still need explicit **approved** / **approve** — Slack is not an approval bypass.
 
-### Step 7: Escalate real anomalies
+### Step 7: Escalate real anomalies (fail-closed A2A)
 
-An anomaly worth acting on (not just noting) goes to `aegis-ceo` directly — not silently absorbed into next week's baseline. This skill reports and flags; it does not decide to cut an agent's access (that's an explicit escalation per CLAUDE.md's operating rules).
+An anomaly worth acting on (not just noting) goes to `aegis-ceo` via **active** A2A — not silently absorbed into next week's baseline, and not Slack-only.
+
+**Escalation trigger criteria (reviewable — escalate when any apply):**
+
+1. Free-pool agent producing mid-cost-scale token/cost volume without a corresponding tier change, **or**
+2. Week-over-week cost/token jump ≥ **2×** prior week for the same agent with no documented workload change, **or**
+3. Sustained OmniRoute **429/503** storm on a shared free key that blocked core scheduled work this week, **or**
+4. This agent (`aegis-infra`) itself trending toward premium-tier-scale usage
+
+If none of the above apply, note the oddity in the rollup only — do not A2A.
+
+**When escalating:**
+
+1. `mcp__trinity__chat_with_agent(name: "aegis-ceo", message: …)` with agent, metric, this week vs last, source, and why it matched a trigger above.
+2. Claim **"CEO notified"** only after confirmed delivery.
+3. On deny/timeout/failure: say **"flagged, delivery failed"** and append an `alert` to `~/.trinity/operator-queue.json` — never imply success.
+
+This skill reports and flags; it does not decide to cut an agent's access (that's an explicit escalation per CLAUDE.md's operating rules).
 
 ## Outputs
 

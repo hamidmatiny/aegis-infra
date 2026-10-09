@@ -4,9 +4,12 @@ description: Review live agents' skills/missions and propose (never apply) skill
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion, mcp__trinity__list_agents, mcp__trinity__get_agent, mcp__trinity__report
 user-invocable: true
 metadata:
-  version: "1.1"
+  version: "1.2"
   created: 2026-09-13
   author: aegis-infra
+  changelog:
+    - "1.2: Routine skill-upgrade approval defaults to aegis-ceo (Hamid 2026-09-16); Hamid-only hard lines listed"
+    - "1.1: Fail-closed gate check + known failure modes"
 ---
 
 # Propose Skill Upgrade
@@ -15,7 +18,26 @@ metadata:
 
 Periodically (manual trigger first — **no schedule until Hamid enables one**) review each live agent's skillset against its stated mission and propose — never apply — upgrades: a new skill worth building, a model/tier change worth considering (hand off to `/propose-agent-tier` when the change is primarily tier/auth), or a structural improvement (independent output verification, structured memory retrofit).
 
-**Hard rule:** this skill never grants any agent new capabilities, never edits another agent's live tools/config, and never schedules itself. Same gate as `/propose-agent-tier`: propose → explicit Hamid/`aegis-ceo` approve → separate apply step.
+**Hard rule:** this skill never grants any agent new capabilities, never edits another agent's live tools/config, and never schedules itself. Propose → explicit approve → separate apply step.
+
+### Approval authority (Hamid, 2026-09-16)
+
+**Default approver for routine skill-upgrade proposals: `aegis-ceo`.**
+
+Present proposals to `aegis-ceo` first (via `mcp__trinity__chat_with_agent` when live, or by recording `Depends on: aegis-ceo approve` and notifying the CEO). Do **not** default the approval ask to Hamid for routine skill/verification/memory upgrades.
+
+`aegis-ceo` must use real manager judgment (same discipline as the skill-adoption experiment): evidence required, no rubber-stamping, willing to decline when a proposal does not clearly help. Silence is still not approval.
+
+**Still Hamid-only (hard line — escalate to Hamid regardless of how routine it seems):**
+
+| Must go to Hamid | Examples |
+|------------------|----------|
+| New hire / tier assignment | `/propose-agent-tier`, any new agent create |
+| Credentials or infrastructure access | OmniRoute keys, auth flips, Docker/host mounts, GitHub deploy keys, new secrets |
+| Track A / Track B boundary | Anything touching `corp-orchestrator`, production AEGIS write paths, or conflating the two tracks |
+| CEO cannot confidently judge | Protocol B: `aegis-ceo` escalates up; Hamid is last resort |
+
+Tier proposals (`/propose-agent-tier`) are **never** covered by this delegation — always Hamid.
 
 ## What Trinity actually supports (do not invent mechanisms)
 
@@ -98,9 +120,11 @@ Format:
 Reply **approved** / **approve** to accept, or decline with a reason. Nothing is applied until then.
 ```
 
+Address the approval ask to **`aegis-ceo`** by default (see Approval authority above). Only address Hamid when the proposal hits a Hamid-only hard line.
+
 ### Step 5: Record
 
-Append to `memory/skill-proposals.md` (create if absent) with status `proposed`. On explicit approve/decline, update that entry's status and date. Never mark approved from silence.
+Append to `memory/skill-proposals.md` (create if absent) with status `proposed`. On explicit approve/decline from the correct approver (`aegis-ceo` for routine; Hamid for hard-line items), update that entry's status and date. Never mark approved from silence.
 
 If Trinity `mcp__trinity__report` is available, publish as `report_type: aegis_infra.skill_proposal`, `display_hint: markdown`. Skip silently if unavailable.
 
