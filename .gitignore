@@ -37,3 +37,7 @@ node_modules/
 __pycache__/
 *.pyc
 .DS_Store
+
+# Published every minute by scripts/capacity-watch.py on the host; runtime, not source
+memory/fleet-roster.json
+memory/capacity-state.json
