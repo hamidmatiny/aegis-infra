@@ -1,17 +1,20 @@
-# Production checkout (2026-10-08)
+# Production checkout
 
-The Oracle VM checkout of `hamidmatiny/aegis` is **not** `main`.
+The Oracle VM checkout of `hamidmatiny/aegis` is back on **`main`** (2026-10-09).
 
 | | |
 |---|---|
-| Branch | `fix/xml-config-credential-framing` |
-| Commit on the VM | `d9132a3099f66c8e7595c2c8e78801c5f3abb732` |
-| Later commit on the PR, not on the VM | `3931b02` (quote-aware XML scan and a narrower negation) |
-| PR | https://github.com/hamidmatiny/aegis/pull/96 (open, not merged) |
-| Why it is deployed | BYPASS-005 and BYPASS-006 (XML config credential framing) are fixed on the deployed commit. `main` does not contain the fix. |
+| Branch | `main` |
+| Commit on the VM | see the history below; always the head of `main` after a redeploy |
+| Redeploy | `git fetch && git merge --ff-only origin/main`, then `sudo docker compose -f docker-compose.yml -f deploy/oracle/docker-compose.demo.yml up -d --build input-defense output-defense` |
+| VM-only change | `deploy/oracle/setup.sh` carries an uncommitted edit (rebuild `smb-portal` on `up`). A copy of the diff is in `~/setup.sh.local-*.patch` on the VM. |
 
-**Do not redeploy production from `main` until PR #96 is merged through the normal gate** (CI green and CodeRabbit APPROVED on the current head, then the armed auto-merge). A redeploy from `main` before that merge removes the XML rules and reopens both bypasses.
+## History
 
-After the merge, redeploy from `main` and retest BYPASS-005 and BYPASS-006 (expect HTTP 403) and a benign control (expect HTTP 200).
+| When (UTC) | Commit | Why |
+|---|---|---|
+| 2026-10-08 | `d9132a3` on `fix/xml-config-credential-framing` | PR #96 deployed before merge to close BYPASS-005/006 |
+| 2026-10-09 12:26 | `caea7c8` main | https://github.com/hamidmatiny/aegis/pull/96 merged (CodeRabbit APPROVED, CI green, auto-merge) |
+| 2026-10-09 14:27 | `6f37d54` main | https://github.com/hamidmatiny/aegis/pull/97 merged (CodeRabbit APPROVED 69233b5, CI green, auto-merge) |
 
-This note is the warning. It is not a merge and not a force-merge.
+Never deploy a PR branch again without recording it here, and return to `main` once the PR merges.
