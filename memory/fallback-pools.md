@@ -59,6 +59,7 @@ Per-agent `ANTHROPIC_MODEL` still selects which mid *lane name* the agent reques
 | `aegis-free-36` | 3.6-flash → flash-lite-latest → 2.0-flash-lite |
 | `aegis-free-latest` | flash-latest → flash-lite-latest → 2.0-flash-lite |
 | `aegis-free-37` | 3.7-flash → 3.5-flash-lite → 3.1-flash-lite → 2.0-flash-lite |
+| `aegis-free-35` | 3.5-flash-lite → flash-lite-latest → 2.0-flash-lite (created 2026-10-10) |
 | `aegis-free` (legacy) | flash-lite-latest → 2.0-flash-lite → 3.7-flash → 3.5-flash-lite → 3.1-flash-lite |
 | `claude-sonnet-4-6` and the Claude alias combos that shared that chain | same three hops, then `gemini-3.5-flash-lite` → `gemini-3.1-flash-lite` so a 429 on the hot models continues |
 
@@ -69,7 +70,7 @@ Per-agent `ANTHROPIC_MODEL` still selects which mid *lane name* the agent reques
 | `the-brain` | Free (was mid/Pro) | `aegis-mid-ds` | 2026-09-22: Pro has no free tier. Primary `gemini-3.1-flash-lite` |
 | `aegis-core-infra` | Free (was mid/Pro) | `aegis-mid-oss` | Primary `gemini-3.5-flash-lite` |
 | `aegis-product-eng` | Free (was mid/Pro) | `aegis-mid` | Split off `aegis-mid-oss` so it does not share core-infra's primary |
-| `aegis-scout` | Mid (temp free) | `aegis-free-36` | Moved 2026-10-09 (see change log) |
+| `aegis-scout` | Mid (temp free) | `aegis-free-35` | Moved 2026-10-10 (see change log) |
 | `aegis-infra` | Free | `aegis-free-lite` | Bookkeeping; lightest primary |
 | `aegis-threat-intel` | Free | `aegis-free-20` | High-volume polling on 2.0 primary |
 | `aegis-analyst` | Free | `aegis-free-36` | Structured reads on 3.6 primary |
@@ -123,3 +124,4 @@ Later parallel run showed more fallback onto 2.0 when lite/3.6 were stressed —
 - 2026-10-09 14:40Z: `aegis-gateway`, `aegis-policy-engine`, `aegis-model-router`, `aegis-agent-gate`, `aegis-audit` and `aegis-scout` -> `aegis-free-36` (Hamid chose this in the same session). Since 12:00Z `gemini-3.7-flash` stalled ~300 s on 15 of 24 calls before OmniRoute fell back, so each turn cost ~5 min; gateway's dispatched audit `tW4ZlbB-G943_5u2A1hxLA` timed out at 3600 s. `gemini-3.6-flash` had 12 OK, 0 stalls. `aegis-growth` stays on `aegis-free-37`. Revert: restore `.tmp/env.before-lane-move-free36-20261009` and export again. Stall timeout: resolved 2026-10-09 19:13Z (see next entry).
 - 2026-10-09 19:13Z: OmniRoute combo target timeout lowered from 310 s to **60 s** for every combo: `comboDefaults.targetTimeoutMs = 60000` via `PATCH /api/settings/combo-defaults` (OmniRoute v3.8.50; stored in `storage.sqlite` key_value `settings/comboDefaults`; per-combo `config.targetTimeoutMs` would override it, none set). The 310 s was `comboCooldownWait.budgetMs` (300 s) + 10 s, used only when `targetTimeoutMs` is unset. The timer covers time to the first response, so long streamed answers are not cut. Verified 19:17Z: `gemini-3.7-flash` cut at 60,004 ms then `gemini-3.5-flash-lite` 200 in 2.9 s; `gemini-3.6-flash` cut at 60,002 ms then `flash-lite-latest` 200 in 2.4 s. Revert: PATCH `{"comboDefaults":{}}`.
 - Admin API auth from the Mac: the local CLI token (`x-omniroute-cli-token`, HMAC of the machine id) had never worked because the launcher's PATH lacked `/usr/sbin` (`ioreg`), so the server saw an empty machine id. Fixed in `run-omniroute.sh` (copy in `deploy/launchd/`), one restart at 19:10:23Z (back in 8 s).
+- 2026-10-10 00:08Z: created combo `aegis-free-35` (3.5-flash-lite → flash-lite-latest → 2.0-flash-lite, maxGlobalAttempts 3) via `POST /api/combos` and moved `aegis-gateway`, `aegis-policy-engine`, `aegis-model-router`, `aegis-agent-gate`, `aegis-audit`, `aegis-scout` to it (Hamid chose "fastest free models in today's call_logs"). 2026-10-09 call_logs, gemini models by average OK latency: 3.5-flash-lite 2.6 s (50/78 OK, 3 stalls), flash-lite-latest 4.2 s (132/200, 35 stalls), 3.1-flash-lite 5.3 s (41/93, 20 stalls), 3.6-flash 6.4 s (18/56, 24 stalls), 3.7-flash 6.7 s (18/58, 28 stalls), 2.0-flash-lite 8.8 s (69/98, 10 stalls), flash-latest 29.4 s (12/46, 18 stalls). Smoke test from the scout container: HTTP 200 in 0.9 s on 3.5-flash-lite. Revert: restore `.tmp/env.before-lane-move-free35-20261010` and export again.
