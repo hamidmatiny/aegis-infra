@@ -18,5 +18,6 @@ The Oracle VM checkout of `hamidmatiny/aegis` is back on **`main`** (2026-10-09)
 | 2026-10-09 14:27 | `6f37d54` main | https://github.com/hamidmatiny/aegis/pull/97 merged (CodeRabbit APPROVED 69233b5, CI green, auto-merge) |
 | 2026-10-09 17:57 | `5341c5a` main | https://github.com/hamidmatiny/aegis/pull/98 merged (CodeRabbit APPROVED f9a358d, CI green, auto-merge) |
 | 2026-10-09 20:30 | `4e65bcc` main | https://github.com/hamidmatiny/aegis/pull/99 merged (CodeRabbit APPROVED 437c001, CI green, auto-merge); the 33 output-only attacks now 403 at the input layer live |
+| 2026-10-10 00:20 | `dfc90dc` main | https://github.com/hamidmatiny/aegis/pull/100 merged (CodeRabbit APPROVED 924da7e, CI green, auto-merge); benign animal questions 200, all 33 + 11 attack prompts 403 at input |
 
 Never deploy a PR branch again without recording it here, and return to `main` once the PR merges.
