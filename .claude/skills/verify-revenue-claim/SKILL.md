@@ -4,7 +4,7 @@ description: Independent structural check that an aegis-analyst revenue claim is
 allowed-tools: Read, Bash
 user-invocable: true
 metadata:
-  version: "1.1"
+  version: "1.2"
   created: 2026-09-13
   author: aegis-infra
 ---
@@ -24,19 +24,28 @@ Typically via Trinity `chat_with_agent` from `aegis-analyst`'s `/check-revenue` 
 1. **Claim** — MRR (value + currency), paying subscribers / signups, checked_at timestamp (as the analyst intends to publish)
 2. **Sources** — JSON excerpts from `GET .../bev/summary` and/or `GET .../bev/trajectory` that the claim cites
 
-If either is missing, reply `FAIL: missing claim or sources` and stop.
+If either is missing, the reply is `FAIL: missing claim or sources` — then still do the Final step.
 
 **Do not call `list_agents` to "find" the analyst.** Agent-scoped `list_agents` only returns agents you have *outbound* A2A permission to chat with (today: `aegis-ceo` + self). `aegis-analyst` can message you (`analyst → infra`) but you cannot message them back, so they will **not** appear in your `list_agents` result. That is intentional Protocol A asymmetry — not a missing agent, not a broken verify path. This skill only needs the claim + sources in the inbound message.
 
 ## Process
 
-1. Parse the claim's numeric fields (MRR display/value, currency, subscriber/signup counts).
-2. Locate the matching fields in the provided source excerpts (`mrr_snapshot.mrr_display` / `mrr_usd` / `mrr_cents` + `currency`, `paying_subscribers`, trajectory signup entry, etc.).
-3. Check support only:
-   - Claimed MRR equals the cited summary field (same currency).
-   - Claimed subscriber/signup count equals the cited field.
-   - If the claim says a field was "not returned by the API", the excerpt must not contain a contradictory value for that field.
-4. Do **not** invent missing numbers, fetch live endpoints yourself (unless the caller explicitly asked you to and provided `CORP_READONLY_TOKEN` — default is do not fetch), or grade prose quality.
+The comparison is deterministic — do not do it by reading the JSON yourself. Put the claim and the cited excerpts into one JSON object and pipe it to the script:
+
+```bash
+python3 scripts/verify_revenue_claim.py <<'EOF'
+{"claim":   {"mrr": 1234.5, "currency": "USD", "paying_subscribers": 7, "signups": 3,
+             "not_returned": []},
+ "sources": {"summary": <bev/summary excerpt as cited>, "trajectory": <bev/trajectory excerpt as cited>}}
+EOF
+```
+
+- `mrr` is in major units (e.g. dollars). The script matches it against `mrr_usd`, else `mrr_cents / 100`, else `mrr_display`, and checks `currency` when both sides state one.
+- `paying_subscribers` is matched in the summary excerpt; `signups` in the trajectory excerpt. Omit a field the claim doesn't make.
+- List a field in `not_returned` when the claim says the API did not return it; the script FAILs if the excerpt contradicts that.
+- The script prints exactly one line: the `PASS: ...` / `FAIL: ...` reply. Use it verbatim.
+
+Do **not** invent missing numbers, fetch live endpoints yourself (unless the caller explicitly asked you to and provided `CORP_READONLY_TOKEN` — default is do not fetch), or grade prose quality.
 
 ### If you must fetch live BEV (optional path only)
 
@@ -57,21 +66,31 @@ curl -sS -H "Authorization: Bearer $CORP_READONLY_TOKEN" \
   https://defenseaegis.org/api/corp/v1/bev/trajectory
 ```
 
-If you must use Python, set the same `User-Agent` on `urllib.request.Request` / `requests` headers. Never treat a 1010 as an expired token until you have confirmed a proper UA was sent.
+If you must use Python, set the same `User-Agent` on `urllib.request.Request` / `requests` headers. Never treat a 1010 as an expired token until you have confirmed a proper UA was sent. Feed the fetched JSON to the script as `sources`.
 
 ## Reply format (exactly)
 
-One of:
+The reply **to the caller** is one of:
 
 ```
-PASS: claim matches cited sources (MRR <value> <currency>, subscribers/signups <n>)
+PASS: claim matches cited sources (MRR <value> <currency>, paying_subscribers <n>, ...)
 ```
 
 ```
 FAIL: <field> claimed <X> but source shows <Y>
 ```
 
-No preamble. No rewrite of the report.
+No preamble. No rewrite of the report. "No preamble" applies to the A2A reply text only — it does **not** exempt this run from the Slack close-out below.
+
+## Final step — Slack completed-task close-out (mandatory)
+
+After the reply line is decided — PASS **or** FAIL, including `missing claim or sources` — post to `#aegis-infra`: `mcp__trinity__list_channel_groups` (`channel_type: "slack"`) → `mcp__trinity__send_group_message`. Keep it short:
+
+```
+verify-revenue-claim for aegis-analyst (A2A): <PASS/FAIL line from the script>. Replied to aegis-analyst in the A2A chat.
+```
+
+No commit trailers (`Co-Authored-By`, `Generated with Claude Code`). This is the step inbound A2A runs kept skipping (Trinity had to post fallback close-outs, 2026-10-09). The run is not done until the post is confirmed or its error is stated. See CLAUDE.md § HARD GATE — Slack completed-task close-out.
 
 ## Known failure modes
 
@@ -93,7 +112,14 @@ No preamble. No rewrite of the report.
 
 **Correct behavior:** Treat missing analyst in `list_agents` as expected (outbound A2A only to `aegis-ceo`). Never refuse or delay `/verify-revenue-claim` because of that. Do not invent an access outage from a filtered roster.
 
+### FM-4 — "No preamble" read as "no close-out"
+
+**What went wrong (2026-10-09):** The strict reply format was taken as "send the one line and stop", so A2A-triggered runs ended without their own `#aegis-infra` close-out.
+
+**Correct behavior:** Reply to the caller with the single line, then always do the Final step.
+
 ## Outputs
 
-- Single-line `PASS` or `FAIL` as above
+- Single-line `PASS` or `FAIL` (from `scripts/verify_revenue_claim.py`) as the A2A reply
+- `#aegis-infra` close-out post
 - No Trinity report publish from this skill (analyst owns publish after PASS)
